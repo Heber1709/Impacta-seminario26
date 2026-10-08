@@ -52,8 +52,10 @@ export class AuthService {
         },
         accessToken,
       };
-    } catch (error) {
-      throw new UnauthorizedException('Token de Google inválido o expirado');
-    }
+} catch (error) {
+  console.error('ERROR GOOGLE:', error);
+  throw new UnauthorizedException('Error validando Google');
+}
+    
   }
 }
