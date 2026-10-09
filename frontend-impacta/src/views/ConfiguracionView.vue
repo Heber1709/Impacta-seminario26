@@ -82,12 +82,182 @@
 
       </div>
 
+      <section v-if="esAdministrador" class="config-card usuarios-card">
+        <div class="section-heading">
+          <div>
+            <span class="eyebrow">ADMINISTRACIÓN</span>
+            <h2>Usuarios del sistema</h2>
+            <p>Registra las personas autorizadas para ingresar a IMPACTA.</p>
+          </div>
+        </div>
+
+        <form class="form-grid" @submit.prevent="crearUsuario">
+          <div class="form-group">
+            <label for="nuevo-nombre">Nombre completo</label>
+            <input
+              id="nuevo-nombre"
+              v-model="nuevoUsuario.nombre"
+              type="text"
+              maxlength="150"
+              placeholder="Nombre del usuario"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="nuevo-email">Correo de Google</label>
+            <input
+              id="nuevo-email"
+              v-model="nuevoUsuario.email"
+              type="email"
+              placeholder="usuario@ejemplo.com"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="nuevo-rol">Rol asignado</label>
+            <select id="nuevo-rol" v-model="nuevoUsuario.rol">
+              <option value="VOLUNTARIO">Voluntario</option>
+              <option value="COORDINADOR">Coordinador</option>
+              <option value="ADMINISTRADOR">Administrador</option>
+            </select>
+          </div>
+
+          <div class="form-actions full-width">
+            <button
+              type="submit"
+              class="btn-primary"
+              :disabled="guardandoUsuario"
+            >
+              {{ guardandoUsuario ? 'Registrando...' : 'Registrar usuario' }}
+            </button>
+          </div>
+        </form>
+
+        <div
+          v-if="mensajeUsuarios"
+          :class="['mensaje', tipoMensajeUsuarios]"
+        >
+          {{ mensajeUsuarios }}
+        </div>
+
+        <div class="usuarios-listado">
+          <div class="listado-heading">
+            <h3>Usuarios registrados</h3>
+            <button
+              type="button"
+              class="btn-secondary"
+              @click="cargarUsuariosSistema"
+              :disabled="cargandoUsuarios"
+            >
+              {{ cargandoUsuarios ? 'Actualizando...' : 'Actualizar lista' }}
+            </button>
+          </div>
+
+          <p v-if="cargandoUsuarios">Cargando usuarios...</p>
+
+          <p v-else-if="usuariosSistema.length === 0">
+            No hay usuarios para mostrar o todavía no se ha cargado la lista.
+          </p>
+
+       
+<div v-else class="tabla-contenedor">
+  <table class="usuarios-tabla">
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Correo</th>
+        <th>Rol</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr v-for="item in usuariosSistema" :key="item.id">
+        <td>{{ item.nombre }}</td>
+        <td>{{ item.email }}</td>
+        <td>{{ item.rol }}</td>
+        <td>
+          <button
+            type="button"
+            class="btn-secondary"
+            @click="iniciarEdicion(item)"
+          >
+            Editar
+          </button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+        </div>
+        
+      <form
+        v-if="usuarioEditandoId"
+        class="form-grid formulario-edicion"
+        @submit.prevent="guardarEdicion"
+      >
+        <h3 class="full-width">Editar usuario</h3>
+
+        <div class="form-group">
+          <label for="editar-nombre">Nombre completo</label>
+          <input
+            id="editar-nombre"
+            v-model="formularioEdicion.nombre"
+            type="text"
+            maxlength="150"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="editar-email">Correo electrónico</label>
+          <input
+            id="editar-email"
+            v-model="formularioEdicion.email"
+            type="email"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="editar-rol">Rol</label>
+          <select id="editar-rol" v-model="formularioEdicion.rol">
+            <option value="VOLUNTARIO">Voluntario</option>
+            <option value="COORDINADOR">Coordinador</option>
+            <option value="ADMINISTRADOR">Administrador</option>
+          </select>
+        </div>
+
+        <div class="form-actions full-width">
+          <button
+            type="button"
+            class="btn-secondary"
+            @click="cancelarEdicion"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            class="btn-primary"
+            :disabled="guardandoEdicion"
+          >
+            {{ guardandoEdicion ? 'Guardando...' : 'Guardar edición' }}
+          </button>
+        </div>
+      </form>
+
+      </section>
+
     </div>
   </MainLayout>
+
+
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import MainLayout from '../layouts/MainLayout.vue'
 import { apiFetch } from '../services/api'
 
@@ -96,6 +266,9 @@ interface Usuario {
   nombre: string
   email: string
   rol: string
+}
+interface UsuarioAdministrado extends Usuario {
+  estado?: boolean
 }
 
 const usuario = ref<Usuario>({
@@ -112,6 +285,31 @@ const formulario = ref({
 const guardando = ref(false)
 const mensaje = ref('')
 const tipoMensaje = ref<'success' | 'error'>('error')
+const esAdministrador = computed(
+  () => usuario.value.rol === 'ADMINISTRADOR'
+)
+
+const usuariosSistema = ref<UsuarioAdministrado[]>([])
+const cargandoUsuarios = ref(false)
+const mensajeUsuarios = ref('')
+const tipoMensajeUsuarios = ref<'success' | 'error'>('error')
+
+const nuevoUsuario = ref({
+  nombre: '',
+  email: '',
+  rol: 'VOLUNTARIO'
+})
+
+const guardandoUsuario = ref(false)
+const usuarioEditandoId = ref<string | null>(null)
+
+const formularioEdicion = ref({
+  nombre: '',
+  email: '',
+  rol: 'VOLUNTARIO'
+})
+
+const guardandoEdicion = ref(false)
 
 const inicial = computed(() => {
   return usuario.value.nombre
@@ -160,7 +358,7 @@ async function guardarCambios() {
   try {
     guardando.value = true
 
-    const response = await apiFetch(`/usuarios/${usuario.value.id}`, {
+   const response = await apiFetch('/usuarios/me', {
       method: 'PATCH',
       body: JSON.stringify({
         nombre: formulario.value.nombre.trim()
@@ -203,7 +401,179 @@ async function guardarCambios() {
   }
 }
 
+
+async function cargarUsuariosSistema() {
+  if (!esAdministrador.value) return
+
+  try {
+    cargandoUsuarios.value = true
+    mensajeUsuarios.value = ''
+
+    const response = await apiFetch('/usuarios')
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error(
+        data.message || 'No fue posible cargar los usuarios.'
+      )
+    }
+
+    usuariosSistema.value = data
+  } catch (error) {
+    mensajeUsuarios.value =
+      error instanceof Error
+        ? error.message
+        : 'No fue posible cargar los usuarios.'
+
+    tipoMensajeUsuarios.value = 'error'
+  } finally {
+    cargandoUsuarios.value = false
+  }
+}
+
+async function crearUsuario() {
+  mensajeUsuarios.value = ''
+
+  if (
+    !nuevoUsuario.value.nombre.trim() ||
+    !nuevoUsuario.value.email.trim()
+  ) {
+    mensajeUsuarios.value = 'Completa el nombre y el correo electrónico.'
+    tipoMensajeUsuarios.value = 'error'
+    return
+  }
+
+  try {
+    guardandoUsuario.value = true
+
+    const response = await apiFetch('/usuarios', {
+      method: 'POST',
+      body: JSON.stringify({
+        nombre: nuevoUsuario.value.nombre.trim(),
+        email: nuevoUsuario.value.email.trim(),
+        rol: nuevoUsuario.value.rol
+      })
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error(
+        Array.isArray(data.message)
+          ? data.message.join(', ')
+          : data.message || 'No fue posible registrar al usuario.'
+      )
+    }
+
+    nuevoUsuario.value = {
+      nombre: '',
+      email: '',
+      rol: 'VOLUNTARIO'
+    }
+
+    mensajeUsuarios.value = 'Usuario registrado correctamente.'
+    tipoMensajeUsuarios.value = 'success'
+
+    await cargarUsuariosSistema()
+  } catch (error) {
+    mensajeUsuarios.value =
+      error instanceof Error
+        ? error.message
+        : 'No fue posible registrar al usuario.'
+
+    tipoMensajeUsuarios.value = 'error'
+  } finally {
+    guardandoUsuario.value = false
+  }
+}
+
+
+function iniciarEdicion(item: UsuarioAdministrado) {
+  usuarioEditandoId.value = item.id
+
+  formularioEdicion.value = {
+    nombre: item.nombre,
+    email: item.email,
+    rol: item.rol
+  }
+
+  mensajeUsuarios.value = ''
+}
+
+function cancelarEdicion() {
+  usuarioEditandoId.value = null
+
+  formularioEdicion.value = {
+    nombre: '',
+    email: '',
+    rol: 'VOLUNTARIO'
+  }
+
+  guardandoEdicion.value = false
+}
+
+async function guardarEdicion() {
+  if (!usuarioEditandoId.value) return
+
+  if (
+    !formularioEdicion.value.nombre.trim() ||
+    !formularioEdicion.value.email.trim()
+  ) {
+    mensajeUsuarios.value = 'Completa el nombre y el correo electrónico.'
+    tipoMensajeUsuarios.value = 'error'
+    return
+  }
+
+  try {
+    guardandoEdicion.value = true
+    mensajeUsuarios.value = ''
+
+    const response = await apiFetch(
+      `/usuarios/${usuarioEditandoId.value}`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify({
+          nombre: formularioEdicion.value.nombre.trim(),
+          email: formularioEdicion.value.email.trim(),
+          rol: formularioEdicion.value.rol
+        })
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error(
+        Array.isArray(data.message)
+          ? data.message.join(', ')
+          : data.message || 'No fue posible actualizar al usuario.'
+      )
+    }
+
+    mensajeUsuarios.value = 'Usuario actualizado correctamente.'
+    tipoMensajeUsuarios.value = 'success'
+
+    cancelarEdicion()
+    await cargarUsuariosSistema()
+  } catch (error) {
+    mensajeUsuarios.value =
+      error instanceof Error
+        ? error.message
+        : 'No fue posible actualizar al usuario.'
+
+    tipoMensajeUsuarios.value = 'error'
+  } finally {
+    guardandoEdicion.value = false
+  }
+}
+
 cargarDatos()
+
+onMounted(() => {
+  if (esAdministrador.value) {
+    cargarUsuariosSistema()
+  }
+})
 </script>
 
 <style scoped>
@@ -391,6 +761,114 @@ cargarDatos()
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+
+/* Administración de usuarios */
+.usuarios-card {
+  margin-top: 28px;
+}
+
+.section-heading {
+  margin-bottom: 28px;
+}
+
+.section-heading h2 {
+  margin: 0 0 10px;
+  color: #18202b;
+  font-size: 26px;
+}
+
+.section-heading p {
+  margin: 0;
+  color: #8a939c;
+  font-size: 15px;
+}
+
+.form-group select {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid #dfe4e1;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #29323a;
+  font-family: inherit;
+  font-size: 15px;
+  box-sizing: border-box;
+  outline: none;
+}
+
+.form-group select:focus {
+  border-color: #75c6a2;
+  box-shadow: 0 0 0 3px rgba(117, 198, 162, 0.12);
+}
+
+.usuarios-listado {
+  margin-top: 32px;
+  padding-top: 26px;
+  border-top: 1px solid #edf0ee;
+}
+
+.listado-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.listado-heading h3 {
+  margin: 0;
+  color: #18202b;
+  font-size: 19px;
+}
+
+.usuarios-listado p {
+  color: #7f898f;
+  font-size: 14px;
+}
+
+.tabla-contenedor {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.usuarios-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 14px;
+}
+
+.usuarios-tabla th {
+  padding: 14px 12px;
+  background: #f4f8f6;
+  color: #456157;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.usuarios-tabla td {
+  padding: 14px 12px;
+  border-bottom: 1px solid #edf0ee;
+  color: #46515a;
+}
+
+.usuarios-tabla th:first-child,
+.usuarios-tabla td:first-child {
+  padding-left: 16px;
+}
+
+@media (max-width: 700px) {
+  .section-heading h2 {
+    font-size: 22px;
+  }
+
+  .listado-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
 
 @media (max-width: 700px) {
   .config-page {

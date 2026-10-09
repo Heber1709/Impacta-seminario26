@@ -53,8 +53,15 @@ export class AuthService {
         accessToken,
       };
 } catch (error) {
-  console.error('ERROR GOOGLE:', error);
-  throw new UnauthorizedException('Error validando Google');
+  if (error instanceof UnauthorizedException) {
+    throw error;
+  }
+
+  console.error('Error al validar el token de Google.');
+
+  throw new UnauthorizedException(
+    'No fue posible validar tu cuenta de Google. Intenta iniciar sesión nuevamente.',
+  );
 }
     
   }

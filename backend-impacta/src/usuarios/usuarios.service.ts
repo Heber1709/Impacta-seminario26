@@ -40,6 +40,25 @@ export class UsuariosService {
   async update(id: string, updateUsuarioDto: UpdateUsuarioDto) {
     const usuario = await this.findOne(id);
 
+    if (
+      usuario.estado &&
+      usuario.rol === 'ADMINISTRADOR' &&
+      updateUsuarioDto.rol &&
+      updateUsuarioDto.rol !== 'ADMINISTRADOR'
+    ) {
+      const administradoresActivos = await this.usuarioRepository.count({
+        where: {
+          rol: 'ADMINISTRADOR' as any,
+          estado: true,
+        },
+      });
+
+      if (administradoresActivos <= 1) {
+        throw new BadRequestException(
+          'No se puede cambiar el rol del último administrador activo.',
+        );
+      }
+    }
     if (updateUsuarioDto.email && updateUsuarioDto.email !== usuario.email) {
       const existe = await this.usuarioRepository.findOneBy({ email: updateUsuarioDto.email });
       if (existe) {
@@ -52,10 +71,26 @@ export class UsuariosService {
   }
 
   async remove(id: string) {
-    const usuario = await this.findOne(id);
-    usuario.estado = false;
-    return await this.usuarioRepository.save(usuario);
+  const usuario = await this.findOne(id);
+
+  if (usuario.rol === 'ADMINISTRADOR' && usuario.estado) {
+    const administradoresActivos = await this.usuarioRepository.count({
+      where: {
+        rol: 'ADMINISTRADOR' as any,
+        estado: true,
+      },
+    });
+
+    if (administradoresActivos <= 1) {
+      throw new BadRequestException(
+        'No se puede desactivar al último administrador activo.',
+      );
+    }
   }
+
+  usuario.estado = false;
+  return await this.usuarioRepository.save(usuario);
+}
   async findByEmail(email: string) {
     return await this.usuarioRepository.findOne({ where: { email, estado: true } });
   }
