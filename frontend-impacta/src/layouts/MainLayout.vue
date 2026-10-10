@@ -52,6 +52,16 @@
           <span>Campañas</span>
         </RouterLink>
 
+        <RouterLink v-if="esAdministrador" to="/usuarios" class="menu-item">
+          <span>♙</span>
+          <span>Usuarios</span>
+        </RouterLink>
+
+        <!--<RouterLink to="/usuarios" class="menu-item">
+          <span>♙</span>
+          <span>Usuarios</span>
+        </RouterLink>-->
+
       </nav>
 
       <div class="sidebar-bottom">
@@ -82,12 +92,27 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
+const esAdministrador = computed(() => {
+  const usuarioGuardado = localStorage.getItem('usuario')
+  if (!usuarioGuardado) {
+    return false
+  }
+
+  try {
+    return JSON.parse(usuarioGuardado).rol === 'ADMINISTRADOR'
+  } catch (error) {
+    console.error('No se pudo leer el usuario guardado.', error)
+    return false
+  }
+})
 
 function cerrarSesion() {
   localStorage.removeItem('accessToken')
+  localStorage.removeItem('usuario')
   router.push('/login')
 }
 </script>

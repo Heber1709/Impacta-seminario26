@@ -36,8 +36,7 @@ import { ref } from 'vue'
 import { GoogleLogin } from 'vue3-google-login'
 import type { CallbackTypes } from 'vue3-google-login'
 
-const googleClientId = '964007219567-hcchnfsnnh5mltrr8bget5vagcdes6lu.apps.googleusercontent.com'
-console.log('GOOGLE CLIENT ID:', googleClientId)
+const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
 const errorMessage = ref('')
 
 const handleGoogleLogin: CallbackTypes.CredentialCallback = async (response) => {
