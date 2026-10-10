@@ -52,7 +52,7 @@
           <span>Campañas</span>
         </RouterLink>
 
-        <RouterLink v-if="esAdministrador" to="/usuarios" class="menu-item">
+        <!--<RouterLink v-if="esAdministrador" to="/usuarios" class="menu-item">
           <span>♙</span>
           <span>Usuarios</span>
         </RouterLink>
