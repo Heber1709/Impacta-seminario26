@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -14,37 +14,36 @@ import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
-    // Esto carga las variables de tu archivo .env
     ConfigModule.forRoot({ isGlobal: true }),
-    
-    // Esto configura la conexión a PostgreSQL
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: process.env.DB_HOST,
-      port: parseInt(process.env.DB_PORT || '5432', 10),
-      username: process.env.DB_USERNAME,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_DATABASE,
-      autoLoadEntities: true,
-      // synchronize en true crea/actualiza las tablas automáticamente 
-      // (solo úsalo en desarrollo, es buenísimo para avanzar rápido)
-      synchronize: true, 
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        type: 'postgres' as const,
+        host: config.getOrThrow<string>('DB_HOST'),
+        port: config.get<number>('DB_PORT', 5432),
+        username: config.getOrThrow<string>('DB_USERNAME'),
+        password: config.getOrThrow<string>('DB_PASSWORD'),
+        database: config.getOrThrow<string>('DB_DATABASE'),
+        autoLoadEntities: true,
+        synchronize: true,
+      }),
     }),
-    
+
     UsuariosModule,
-    
+
     BeneficiariosModule,
-    
+
     DonantesModule,
-    
+
     DonacionesModule,
-    
+
     InventarioModule,
-    
+
     CampanasModule,
-    
+
     EntregasModule,
-    
+
     AuthModule,
   ],
   controllers: [AppController],

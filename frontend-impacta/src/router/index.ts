@@ -75,12 +75,17 @@ const router = createRouter({
        component: () => import('../views/CampanasView.vue')
       },
      
- {
+     {
       path: '/nueva-campana',
       name: 'nueva-campana',
       component: () => import('../views/NuevaCampanaView.vue')
-},
+     },
 
+     {
+      path: '/usuarios',
+      name: 'usuarios',
+      component: () => import('../views/UsuariosView.vue')
+     },
 
 {
   path: '/configuracion',

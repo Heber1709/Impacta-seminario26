@@ -57,7 +57,10 @@ export class AuthService {
     throw error;
   }
 
-  console.error('Error al validar el token de Google.');
+  console.error(
+    'Error al validar el token de Google:',
+    error instanceof Error ? error.message : String(error),
+  );
 
   throw new UnauthorizedException(
     'No fue posible validar tu cuenta de Google. Intenta iniciar sesión nuevamente.',
