@@ -14,20 +14,13 @@
 
       <nav class="menu">
 
-        <RouterLink
-          to="/dashboard"
-          class="menu-item"
-          exact-active-class="active"
-        >
+        <RouterLink to="/dashboard" class="menu-item" exact-active-class="active">
           <span>⌂</span>
           <span>Inicio</span>
         </RouterLink>
 
         <RouterLink
-          to="/beneficiarios"
-          class="menu-item"
-          exact-active-class="active"
-        >
+          to="/beneficiarios" class="menu-item" exact-active-class="active" >
           <span>♙</span>
           <span>Beneficiarios</span>
         </RouterLink>
@@ -52,24 +45,14 @@
           <span>Campañas</span>
         </RouterLink>
 
-        <!--<RouterLink v-if="esAdministrador" to="/usuarios" class="menu-item">
-          <span>♙</span>
-          <span>Usuarios</span>
-        </RouterLink>
-
-        <!--<RouterLink to="/usuarios" class="menu-item">
-          <span>♙</span>
-          <span>Usuarios</span>
-        </RouterLink>-->
-
       </nav>
 
       <div class="sidebar-bottom">
 
-       <RouterLink to="/configuracion" class="menu-item">
-  <span>⚙</span>
-  <span>Configuración</span>
-</RouterLink>
+        <RouterLink to="/configuracion" class="menu-item">
+          <span>⚙</span>
+          <span>Configuración</span>
+        </RouterLink>
 
         <a
           href="#"
@@ -92,11 +75,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+//import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
-const esAdministrador = computed(() => {
+/*const esAdministrador = computed(() => {
   const usuarioGuardado = localStorage.getItem('usuario')
   if (!usuarioGuardado) {
     return false
@@ -108,7 +91,7 @@ const esAdministrador = computed(() => {
     console.error('No se pudo leer el usuario guardado.', error)
     return false
   }
-})
+})*/
 
 function cerrarSesion() {
   localStorage.removeItem('accessToken')
