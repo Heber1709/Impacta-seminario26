@@ -5,22 +5,22 @@
       <div class="page-header">
         <div>
           <span class="eyebrow">GESTIÓN</span>
-          <h1>Nueva donación</h1>
-          <p>Registra una nueva donación recibida por Impacta.</p>
+          <h1>{{ editando ? 'Editar donación' : 'Nueva donación' }}</h1>
+          <p>
+            {{
+              editando
+                ? 'Actualiza los datos de la donación.'
+                : 'Registra una nueva donación recibida por Impacta.'
+            }}
+          </p>
         </div>
 
-        <div class="header-actions">
-          <button class="btn-secondary" type="button" @click="volver">
-            Cancelar
-          </button>
-
-          <button class="btn-primary" type="button" @click="guardarDonacion">
-           Guardar donación
-          </button>
-        </div>
       </div>
 
-      <div class="form-card">
+      <form class="form-card" @submit.prevent="guardarDonacion">
+        <p v-if="cargandoDonacion" class="form-message" role="status">
+          Cargando información de la donación...
+        </p>
 
         <div class="form-section">
           <h2>Información de la donación</h2>
@@ -35,13 +35,14 @@
               v-model="formulario.codigo_unico"
               type="text"
               maxlength="50"
+              required
               placeholder="Ej. DON-001"
             />
           </div>
 
           <div class="form-group">
             <label>Tipo de donación</label>
-            <select v-model="formulario.tipo">
+            <select v-model="formulario.tipo" required>
               <option value="">Selecciona una opción</option>
               <option value="MONETARIA">Monetaria</option>
               <option value="FISICA">Física</option>
@@ -50,7 +51,7 @@
 
           <div class="form-group">
             <label>Categoría</label>
-            <select v-model="formulario.categoria">
+            <select v-model="formulario.categoria" required>
               <option value="">Selecciona una categoría</option>
               <option value="ALIMENTOS">Alimentos</option>
               <option value="MEDICAMENTOS">Medicamentos</option>
@@ -76,8 +77,8 @@
           <div class="form-group full">
             <label>Donante</label>
 
-            <select v-model="formulario.donante_id">
-              <option value="">
+            <select v-model="formulario.donante_id" required>
+              <option value="" disabled>
                 {{
                   cargandoDonantes
                     ? 'Cargando donantes...'
@@ -112,7 +113,25 @@
           {{ errorMessage }}
         </p>
 
-      </div>
+        <div class="form-actions">
+          <button class="btn-secondary" type="button" @click="volver">
+            Cancelar
+          </button>
+          <button
+            class="btn-primary"
+            type="submit"
+            :disabled="guardando || cargandoDonantes || cargandoDonacion"
+          >
+            {{
+              guardando
+                ? 'Guardando...'
+                : editando
+                  ? 'Guardar cambios'
+                  : 'Guardar donación'
+            }}
+          </button>
+        </div>
+      </form>
     </div>
   </MainLayout>
 </template>
@@ -120,11 +139,14 @@
 
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import MainLayout from '../layouts/MainLayout.vue'
 import { apiFetch } from '../services/api'
 
 const router = useRouter()
+const route = useRoute()
+const donacionId = typeof route.params.id === 'string' ? route.params.id : ''
+const editando = Boolean(donacionId)
 
 const formulario = reactive({
   codigo_unico: '',
@@ -143,6 +165,8 @@ interface Donante {
 
 const donantes = ref<Donante[]>([])
 const cargandoDonantes = ref(true)
+const cargandoDonacion = ref(false)
+const guardando = ref(false)
 const errorMessage = ref('')
 
 function volver() {
@@ -151,18 +175,24 @@ function volver() {
 async function guardarDonacion() {
   try {
     errorMessage.value = ''
+    guardando.value = true
 
-    const response = await apiFetch('/donaciones', {
-      method: 'POST',
-      body: JSON.stringify({
-        codigo_unico: formulario.codigo_unico,
-        tipo: formulario.tipo,
-        categoria: formulario.categoria,
-        monto: formulario.monto ? Number(formulario.monto) : undefined,
-        fotografia: formulario.fotografia_url || undefined,
-        donante_id: formulario.donante_id
-      })
-    })
+    const response = await apiFetch(
+      editando
+        ? `/donaciones/${encodeURIComponent(donacionId)}`
+        : '/donaciones',
+      {
+        method: editando ? 'PATCH' : 'POST',
+        body: JSON.stringify({
+          codigo_unico: formulario.codigo_unico.trim(),
+          tipo: formulario.tipo,
+          categoria: formulario.categoria,
+          monto: formulario.monto === '' ? null : Number(formulario.monto),
+          fotografia_url: formulario.fotografia_url.trim() || null,
+          donante_id: formulario.donante_id,
+        }),
+      }
+    )
 
     const data = await response.json()
 
@@ -174,7 +204,11 @@ async function guardarDonacion() {
       )
     }
 
-    alert('Donación guardada correctamente.')
+    alert(
+      editando
+        ? 'Donación actualizada correctamente.'
+        : 'Donación guardada correctamente.'
+    )
     router.push('/donaciones')
   } catch (error) {
     console.error(error)
@@ -183,6 +217,51 @@ async function guardarDonacion() {
       error instanceof Error
         ? error.message
         : 'No fue posible guardar la donación.'
+  } finally {
+    guardando.value = false
+  }
+}
+
+async function cargarDonacion() {
+  try {
+    cargandoDonacion.value = true
+    errorMessage.value = ''
+    const response = await apiFetch(
+      `/donaciones/${encodeURIComponent(donacionId)}`
+    )
+    const data = await response.json()
+    if (!response.ok) {
+      throw new Error(
+      Array.isArray(data.message)
+        ? data.message.join(', ')
+        : data.message || 'No fue posible cargar la donación.'
+      )
+    }
+
+    formulario.codigo_unico = data.codigo_unico
+    formulario.tipo = data.tipo
+    formulario.categoria = data.categoria
+    formulario.monto = data.monto == null ? '' : String(data.monto)
+    formulario.fotografia_url = data.fotografia_url ?? ''
+    formulario.donante_id = data.donante?.id ?? ''
+    if (
+      data.donante &&
+      !donantes.value.some((donante) => donante.id === data.donante.id)
+    ) {
+      donantes.value.push({
+        id: data.donante.id,
+        nombre: data.donante.nombre,
+        tipo: data.donante.tipo,
+      })
+    }
+  } catch (error) {
+    console.error(error)
+    errorMessage.value =
+      error instanceof Error
+        ? error.message
+        : 'No fue posible cargar la donación.'
+  } finally {
+    cargandoDonacion.value = false
   }
 }
 
@@ -209,8 +288,15 @@ async function cargarDonantes() {
 }
 
 onMounted(() => {
-  cargarDonantes()
+  void cargarDatos()
 })
+
+async function cargarDatos() {
+  await cargarDonantes()
+  if (editando) {
+    await cargarDonacion()
+  }
+}
 </script>
 
 <style scoped>
@@ -307,6 +393,22 @@ onMounted(() => {
   border-radius: 20px;
   padding: 34px;
   box-shadow: 0 8px 28px rgba(25, 55, 45, 0.05);
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.form-message {
+  color: #59645f;
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .form-section {

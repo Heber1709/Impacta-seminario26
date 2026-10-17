@@ -1,6 +1,7 @@
 import request from 'supertest';
 import {
   apiUrl,
+  existingLocation,
   preserveQaData,
   reportPreservedQaData,
   tokenForRole,
@@ -13,6 +14,7 @@ const adminToken = tokenForRole('ADMINISTRADOR');
 describe('Beneficiary and delivery workflows', () => {
   it('validates beneficiary data, persists it, and registers a linked delivery', async () => {
     const dpi = uniqueDpi();
+    const location = await existingLocation();
     let beneficiaryId: string | undefined;
     let deliveryId: string | undefined;
     let completed = false;
@@ -31,8 +33,7 @@ describe('Beneficiary and delivery workflows', () => {
           dpi,
           nombre_completo: 'Beneficiario QA temporal',
           direccion: 'Dirección de pruebas',
-          municipio: 'Municipio QA',
-          departamento: 'Departamento QA',
+          ...location,
           integrantes_hogar: 3,
         })
         .expect(201);
@@ -47,8 +48,7 @@ describe('Beneficiary and delivery workflows', () => {
           dpi,
           nombre_completo: 'Beneficiario duplicado',
           direccion: 'Dirección de pruebas',
-          municipio: 'Municipio QA',
-          departamento: 'Departamento QA',
+          ...location,
           integrantes_hogar: 1,
         })
         .expect(400);

@@ -40,15 +40,30 @@ export class DonacionesService {
   }
 
   async update(id: string, updateDonacionesDto: UpdateDonacionesDto) {
-    await this.findOne(id);
-    
-    const dataToUpdate: any = { ...updateDonacionesDto };
-    if (updateDonacionesDto.donante_id) {
-      dataToUpdate.donante = { id: updateDonacionesDto.donante_id };
-      delete dataToUpdate.donante_id;
+    const donacion = await this.findOne(id);
+    const { donante_id, ...fieldsToUpdate } = updateDonacionesDto;
+
+    if (
+      fieldsToUpdate.codigo_unico &&
+      fieldsToUpdate.codigo_unico !== donacion.codigo_unico
+    ) {
+      const existingCode = await this.donacionRepository.findOneBy({
+        codigo_unico: fieldsToUpdate.codigo_unico,
+      });
+      if (existingCode && existingCode.id !== id) {
+        throw new BadRequestException(
+          'Ya existe una donación registrada con este código único',
+        );
+      }
     }
 
-    await this.donacionRepository.update(id, dataToUpdate);
+    this.donacionRepository.merge(donacion, fieldsToUpdate);
+    if (donante_id !== undefined) {
+      this.donacionRepository.merge(donacion, {
+        donante: { id: donante_id },
+      });
+    }
+    await this.donacionRepository.save(donacion);
     return this.findOne(id);
   }
 

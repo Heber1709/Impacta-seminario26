@@ -70,6 +70,12 @@ const router = createRouter({
     },
 
     {
+      path: '/editar-donacion/:id',
+      name: 'editar-donacion',
+      component: () => import('../views/NuevaDonacionView.vue')
+    },
+
+    {
       path: '/inventario',
       name: 'inventario',
       component: () => import('../views/InventarioView.vue')
