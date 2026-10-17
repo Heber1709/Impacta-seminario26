@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import MainLayout from '../layouts/MainLayout.vue'
 import { apiFetch } from '../services/api'
+import { hasPermission as can, isAdministrator } from '../services/permissions'
 
 interface Departamento {
   codigo_departamento: string
@@ -193,6 +194,7 @@ onMounted(cargarDatos)
           <p>Administra los municipios y el departamento al que pertenecen.</p>
         </div>
         <button
+          v-if="can('municipios', 'agregar')"
           class="primary-button"
           type="button"
           :disabled="departamentos.length === 0"
@@ -243,7 +245,7 @@ onMounted(cargarDatos)
                 <th>Código</th>
                 <th>Descripción</th>
                 <th>Departamento</th>
-                <th class="actions-heading">Acciones</th>
+                <th v-if="can('municipios', 'editar') || isAdministrator()" class="actions-heading">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -254,9 +256,10 @@ onMounted(cargarDatos)
                 <td>{{ municipio.codigo_municipio }}</td>
                 <td class="name-cell">{{ municipio.descripcion }}</td>
                 <td>{{ nombreDepartamento(municipio.codigo_departamento) }}</td>
-                <td>
+                <td v-if="can('municipios', 'editar') || isAdministrator()">
                   <div class="row-actions">
                     <button
+                      v-if="can('municipios', 'editar')"
                       class="text-button"
                       type="button"
                       @click="abrirEdicion(municipio)"
@@ -264,6 +267,7 @@ onMounted(cargarDatos)
                       Editar
                     </button>
                     <button
+                      v-if="isAdministrator()"
                       class="text-button danger-button"
                       type="button"
                       :disabled="eliminando === municipio.codigo_municipio"

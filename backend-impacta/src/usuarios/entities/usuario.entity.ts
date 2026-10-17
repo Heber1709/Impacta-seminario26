@@ -1,4 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import type { UserPermissions } from '../../permissions/permissions.types';
 
 export enum RolUsuario {
   ADMINISTRADOR = 'ADMINISTRADOR',
@@ -22,4 +23,7 @@ export class Usuario {
 
   @Column({ default: true })
   estado: boolean;
+
+  @Column({ type: 'jsonb', default: () => "'{}'::jsonb" })
+  permisos: UserPermissions;
 }

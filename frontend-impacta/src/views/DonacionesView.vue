@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import MainLayout from '../layouts/MainLayout.vue'
 import { apiFetch } from '../services/api'
+import { hasPermission as can } from '../services/permissions'
 
 const router = useRouter()
 
@@ -108,6 +109,7 @@ onMounted(() => {
         </div>
 
         <button
+          v-if="can('donaciones', 'agregar')"
           class="primary-button"
           type="button"
           @click="nuevaDonacion"
@@ -192,7 +194,7 @@ onMounted(() => {
                 <th>Categoría</th>
                 <th>Monto</th>
                 <th>Fecha</th>
-                <th>Acciones</th>
+                <th v-if="can('donaciones', 'editar')">Acciones</th>
               </tr>
             </thead>
 
@@ -201,7 +203,7 @@ onMounted(() => {
                 v-for="donacion in donacionesFiltradas"
                 :key="donacion.id"
               >
-                <td>
+                <td v-if="can('donaciones', 'editar')">
                   {{ donacion.codigo_unico }}
                 </td>
 

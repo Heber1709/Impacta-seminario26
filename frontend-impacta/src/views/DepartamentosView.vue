@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import MainLayout from '../layouts/MainLayout.vue'
 import { apiFetch } from '../services/api'
+import { hasPermission as can, isAdministrator } from '../services/permissions'
 
 interface Departamento {
   codigo_departamento: string
@@ -154,7 +155,7 @@ onMounted(cargarDepartamentos)
           <h1>Departamentos</h1>
           <p>Administra los departamentos disponibles para las ubicaciones.</p>
         </div>
-        <button class="primary-button" type="button" @click="abrirCrear">
+        <button v-if="can('departamentos', 'agregar')" class="primary-button" type="button" @click="abrirCrear">
           <span>+</span>
           Nuevo departamento
         </button>
@@ -193,7 +194,7 @@ onMounted(cargarDepartamentos)
               <tr>
                 <th>Código</th>
                 <th>Descripción</th>
-                <th class="actions-heading">Acciones</th>
+                <th v-if="can('departamentos', 'editar') || isAdministrator()" class="actions-heading">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -203,9 +204,10 @@ onMounted(cargarDepartamentos)
               >
                 <td>{{ departamento.codigo_departamento }}</td>
                 <td class="name-cell">{{ departamento.descripcion }}</td>
-                <td>
+                <td v-if="can('departamentos', 'editar') || isAdministrator()">
                   <div class="row-actions">
                     <button
+                      v-if="can('departamentos', 'editar')"
                       class="text-button"
                       type="button"
                       @click="abrirEdicion(departamento)"
@@ -213,6 +215,7 @@ onMounted(cargarDepartamentos)
                       Editar
                     </button>
                     <button
+                      v-if="isAdministrator()"
                       class="text-button danger-button"
                       type="button"
                       :disabled="eliminando === departamento.codigo_departamento"

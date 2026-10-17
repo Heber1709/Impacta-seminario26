@@ -6,6 +6,7 @@ import { CatalogosController } from './catalogos.controller';
 import { CatalogosService } from './catalogos.service';
 import { Departamento } from './entities/departamento.entity';
 import { Municipio } from './entities/municipio.entity';
+import { PermissionsGuard } from '../permissions/permissions.guard';
 
 @Module({
   imports: [
@@ -17,7 +18,7 @@ import { Municipio } from './entities/municipio.entity';
     ]),
   ],
   controllers: [CatalogosController],
-  providers: [CatalogosService],
+  providers: [CatalogosService, PermissionsGuard],
   exports: [CatalogosService],
 })
 export class CatalogosModule {}

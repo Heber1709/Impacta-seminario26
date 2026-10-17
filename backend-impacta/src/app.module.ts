@@ -51,6 +51,7 @@ import { CatalogosModule } from './catalogos/catalogos.module';
     VoluntariosModule,
 
     CatalogosModule,
+
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -9,7 +9,7 @@
     <p>Administra las campañas de donación de IMPACTA.</p>
   </div>
 
-  <button class="primary-button" @click="$router.push('/nueva-campana')">
+  <button v-if="can('campanas', 'agregar')" class="primary-button" @click="$router.push('/nueva-campana')">
     + Nueva campaña
   </button>
 </div>
@@ -50,7 +50,7 @@
                 <th>Fin</th>
                 <th>Meta económica</th>
                 <th>Meta productos</th>
-                <th>Acciones</th>
+                <th v-if="can('campanas', 'editar')">Acciones</th>
               </tr>
             </thead>
 
@@ -63,7 +63,7 @@
                   {{ campana.nombre }}
                 </td>
 
-                <td>
+                <td v-if="can('campanas', 'editar')">
                   {{ campana.objetivo }}
                 </td>
 
@@ -130,6 +130,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import MainLayout from '../layouts/MainLayout.vue'
 import { apiFetch } from '../services/api'
+import { hasPermission as can } from '../services/permissions'
 
 const router = useRouter()
 

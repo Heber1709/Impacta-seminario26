@@ -11,6 +11,7 @@
 
         <div class="header-actions">
           <button
+            v-if="can('inventario', 'agregar')"
             class="btn-primary"
             type="button"
             @click="nuevoMovimiento"
@@ -147,7 +148,7 @@
           </p>
 
           <button
-            v-if="!busqueda"
+            v-if="!busqueda && can('inventario', 'agregar')"
             class="btn-primary"
             type="button"
             @click="nuevoMovimiento"
@@ -168,6 +169,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import MainLayout from '../layouts/MainLayout.vue'
 import { apiFetch } from '../services/api'
+import { hasPermission as can } from '../services/permissions'
 
 const router = useRouter()
 
