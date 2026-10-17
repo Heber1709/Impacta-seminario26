@@ -8,23 +8,38 @@ interface Voluntario {
   dpi: string
   nombre_completo: string
   direccion: string
-  municipio: string
-  departamento: string
+  codigo_municipio: string | null
+  codigo_departamento: string | null
 }
 
 interface VoluntarioForm {
   dpi: string
   nombre_completo: string
   direccion: string
-  municipio: string
-  departamento: string
+  codigo_municipio: string
+  codigo_departamento: string
+}
+
+interface Departamento {
+  codigo_departamento: string
+  descripcion: string
+}
+
+interface Municipio {
+  codigo_municipio: string
+  descripcion: string
+  codigo_departamento: string
 }
 
 const voluntarios = ref<Voluntario[]>([])
+const departamentos = ref<Departamento[]>([])
+const municipios = ref<Municipio[]>([])
 const busqueda = ref('')
 const cargando = ref(true)
+const cargandoCatalogos = ref(true)
 const guardando = ref(false)
 const errorMessage = ref('')
+const errorCatalogos = ref('')
 const formError = ref('')
 const modalAbierto = ref(false)
 const voluntarioEditando = ref<Voluntario | null>(null)
@@ -36,9 +51,33 @@ function nuevoFormulario(): VoluntarioForm {
     dpi: '',
     nombre_completo: '',
     direccion: '',
-    municipio: '',
-    departamento: '',
+    codigo_municipio: '',
+    codigo_departamento: '',
   }
+}
+
+const municipiosDelDepartamento = computed(() =>
+  municipios.value.filter(
+    (municipio) =>
+      municipio.codigo_departamento === form.value.codigo_departamento
+  )
+)
+
+function nombreDepartamento(voluntario: Voluntario) {
+  return (
+    departamentos.value.find(
+      (departamento) =>
+        departamento.codigo_departamento === voluntario.codigo_departamento
+    )?.descripcion ?? 'Sin asignar'
+  )
+}
+
+function nombreMunicipio(voluntario: Voluntario) {
+  return (
+    municipios.value.find(
+      (municipio) => municipio.codigo_municipio === voluntario.codigo_municipio
+    )?.descripcion ?? 'Sin asignar'
+  )
 }
 
 const voluntariosFiltrados = computed(() => {
@@ -53,8 +92,8 @@ const voluntariosFiltrados = computed(() => {
       voluntario.dpi,
       voluntario.nombre_completo,
       voluntario.direccion,
-      voluntario.municipio,
-      voluntario.departamento,
+      nombreMunicipio(voluntario),
+      nombreDepartamento(voluntario),
     ].some((valor) => valor.toLowerCase().includes(texto))
   )
 })
@@ -87,6 +126,45 @@ async function cargarVoluntarios() {
   }
 }
 
+async function cargarCatalogos() {
+  try {
+    cargandoCatalogos.value = true
+    errorCatalogos.value = ''
+    const [departamentosResponse, municipiosResponse] = await Promise.all([
+      apiFetch('/catalogos/departamentos'),
+      apiFetch('/catalogos/municipios'),
+    ])
+    const [departamentosData, municipiosData] = await Promise.all([
+      departamentosResponse.json(),
+      municipiosResponse.json(),
+    ])
+    if (!departamentosResponse.ok) {
+      throw new Error(
+        typeof departamentosData.message === 'string'
+          ? departamentosData.message
+          : 'No fue posible cargar los departamentos.'
+      )
+    }
+    if (!municipiosResponse.ok) {
+      throw new Error(
+        typeof municipiosData.message === 'string'
+          ? municipiosData.message
+          : 'No fue posible cargar los municipios.'
+      )
+    }
+    departamentos.value = departamentosData as Departamento[]
+    municipios.value = municipiosData as Municipio[]
+  } catch (error) {
+    console.error(error)
+    errorCatalogos.value =
+      error instanceof Error
+        ? error.message
+        : 'No fue posible cargar los catálogos de ubicación.'
+  } finally {
+    cargandoCatalogos.value = false
+  }
+}
+
 function abrirCrear() {
   voluntarioEditando.value = null
   form.value = nuevoFormulario()
@@ -96,12 +174,19 @@ function abrirCrear() {
 
 function abrirEdicion(voluntario: Voluntario) {
   voluntarioEditando.value = voluntario
+  const departamentoCatalogo = departamentos.value.find(
+      (departamento) =>
+        departamento.codigo_departamento === voluntario.codigo_departamento
+    )
+  const municipioCatalogo = municipios.value.find(
+      (municipio) => municipio.codigo_municipio === voluntario.codigo_municipio
+    )
   form.value = {
     dpi: voluntario.dpi,
     nombre_completo: voluntario.nombre_completo,
     direccion: voluntario.direccion,
-    municipio: voluntario.municipio,
-    departamento: voluntario.departamento,
+    codigo_municipio: municipioCatalogo?.codigo_municipio ?? '',
+    codigo_departamento: departamentoCatalogo?.codigo_departamento ?? '',
   }
   formError.value = ''
   modalAbierto.value = true
@@ -117,6 +202,16 @@ async function guardarVoluntario() {
   try {
     guardando.value = true
     formError.value = ''
+
+    const departamento = departamentos.value.find(
+      (item) => item.codigo_departamento === form.value.codigo_departamento
+    )
+    const municipio = municipiosDelDepartamento.value.find(
+      (item) => item.codigo_municipio === form.value.codigo_municipio
+    )
+    if (!departamento || !municipio) {
+      throw new Error('Selecciona un departamento y un municipio válidos.')
+    }
 
     const editando = voluntarioEditando.value
     const response = await apiFetch(
@@ -190,7 +285,10 @@ async function desactivarVoluntario(voluntario: Voluntario) {
   }
 }
 
-onMounted(cargarVoluntarios)
+onMounted(() => {
+  cargarVoluntarios()
+  cargarCatalogos()
+})
 </script>
 
 <template>
@@ -203,7 +301,12 @@ onMounted(cargarVoluntarios)
           <p>Administra la información de las personas voluntarias de Impacta.</p>
         </div>
 
-        <button class="primary-button" type="button" @click="abrirCrear">
+        <button
+          class="primary-button"
+          type="button"
+          :disabled="cargandoCatalogos"
+          @click="abrirCrear"
+        >
           <span>+</span>
           Nuevo voluntario
         </button>
@@ -278,8 +381,8 @@ onMounted(cargarVoluntarios)
                 <td>{{ voluntario.dpi }}</td>
                 <td class="name-cell">{{ voluntario.nombre_completo }}</td>
                 <td>{{ voluntario.direccion }}</td>
-                <td>{{ voluntario.municipio }}</td>
-                <td>{{ voluntario.departamento }}</td>
+                <td>{{ nombreMunicipio(voluntario) }}</td>
+                <td>{{ nombreDepartamento(voluntario) }}</td>
                 <td>
                   <div class="row-actions">
                     <button
@@ -373,24 +476,73 @@ onMounted(cargarVoluntarios)
             </label>
 
             <label>
-              Municipio
-              <input
-                v-model.trim="form.municipio"
-                type="text"
-                maxlength="100"
+              Departamento
+              <select
+                v-model="form.codigo_departamento"
                 required
-              />
+                :disabled="
+                  cargandoCatalogos ||
+                  errorCatalogos !== '' ||
+                  departamentos.length === 0
+                "
+                @change="form.codigo_municipio = ''"
+              >
+                <option value="" disabled>Selecciona un departamento</option>
+                <option
+                  v-for="departamento in departamentos"
+                  :key="departamento.codigo_departamento"
+                  :value="departamento.codigo_departamento"
+                >
+                  {{ departamento.descripcion }}
+                </option>
+              </select>
             </label>
 
             <label>
-              Departamento
-              <input
-                v-model.trim="form.departamento"
-                type="text"
-                maxlength="100"
+              Municipio
+              <select
+                v-model="form.codigo_municipio"
                 required
-              />
+                :disabled="
+                  !form.codigo_departamento ||
+                  municipiosDelDepartamento.length === 0
+                "
+              >
+                <option value="" disabled>Selecciona un municipio</option>
+                <option
+                  v-for="municipio in municipiosDelDepartamento"
+                  :key="municipio.codigo_municipio"
+                  :value="municipio.codigo_municipio"
+                >
+                  {{ municipio.descripcion }}
+                </option>
+              </select>
             </label>
+
+            <p v-if="errorCatalogos" class="form-error" role="alert">
+              {{ errorCatalogos }}
+              <button class="retry-button" type="button" @click="cargarCatalogos">
+                Intentar de nuevo
+              </button>
+            </p>
+            <p
+              v-else-if="departamentos.length === 0"
+              class="location-hint"
+            >
+              Registra primero un
+              <RouterLink to="/departamentos">departamento</RouterLink>
+              y sus municipios.
+            </p>
+            <p
+              v-else-if="
+                form.codigo_departamento &&
+                municipiosDelDepartamento.length === 0
+              "
+              class="location-hint"
+            >
+              Este departamento todavía no tiene municipios.
+              <RouterLink to="/municipios">Agregar municipios</RouterLink>
+            </p>
 
             <p v-if="formError" class="form-error" role="alert">
               {{ formError }}
@@ -686,7 +838,8 @@ onMounted(cargarVoluntarios)
   font-weight: 600;
 }
 
-.volunteer-form input {
+.volunteer-form input,
+.volunteer-form select {
   width: 100%;
   box-sizing: border-box;
   border: 1px solid #dce6e1;
@@ -697,7 +850,8 @@ onMounted(cargarVoluntarios)
   font: inherit;
 }
 
-.volunteer-form input:focus {
+.volunteer-form input:focus,
+.volunteer-form select:focus {
   border-color: #6fb98f;
   outline: 2px solid rgba(111, 185, 143, 0.18);
 }
@@ -706,6 +860,17 @@ onMounted(cargarVoluntarios)
   margin: 0;
   color: #b54747;
   font-size: 13px;
+}
+
+.location-hint {
+  margin: 0;
+  color: #71807b;
+  font-size: 13px;
+}
+
+.location-hint a {
+  color: #456b52;
+  font-weight: 600;
 }
 
 .modal-actions {

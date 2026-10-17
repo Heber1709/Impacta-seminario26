@@ -1,4 +1,10 @@
-import { IsInt, IsNotEmpty, IsString, MaxLength, Min } from 'class-validator';
+import {
+  IsInt,
+  IsNotEmpty,
+  IsString,
+  MaxLength,
+  Min,
+} from 'class-validator';
 
 export class CreateBeneficiarioDto {
   @IsString()
@@ -18,13 +24,13 @@ export class CreateBeneficiarioDto {
 
   @IsString()
   @IsNotEmpty()
-  @MaxLength(100)
-  municipio: string;
+  @MaxLength(20)
+  codigo_departamento: string;
 
   @IsString()
   @IsNotEmpty()
-  @MaxLength(100)
-  departamento: string;
+  @MaxLength(20)
+  codigo_municipio: string;
 
   @IsInt()
   @Min(1)

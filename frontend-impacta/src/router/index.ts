@@ -34,6 +34,12 @@ const router = createRouter({
     },
 
     {
+      path: '/editar-beneficiario/:id',
+      name: 'editar-beneficiario',
+      component: () => import('../views/NuevoBeneficiarioView.vue')
+    },
+
+    {
       path: '/donantes',
       name: 'donantes',
       component: () => import('../views/DonantesView.vue')
@@ -46,6 +52,12 @@ const router = createRouter({
     },
 
     {
+      path: '/editar-donante/:id',
+      name: 'editar-donante',
+      component: () => import('../views/NuevoDonanteView.vue')
+    },
+
+    {
       path: '/donaciones',
       name: 'donaciones',
       component: () => import('../views/DonacionesView.vue')
@@ -54,6 +66,12 @@ const router = createRouter({
     {
       path: '/nueva-donacion',
       name: 'nueva-donacion',
+      component: () => import('../views/NuevaDonacionView.vue')
+    },
+
+    {
+      path: '/editar-donacion/:id',
+      name: 'editar-donacion',
       component: () => import('../views/NuevaDonacionView.vue')
     },
 
@@ -82,6 +100,12 @@ const router = createRouter({
      },
 
      {
+      path: '/editar-campana/:id',
+      name: 'editar-campana',
+      component: () => import('../views/NuevaCampanaView.vue')
+     },
+
+     {
       path: '/usuarios',
       name: 'usuarios',
       component: () => import('../views/UsuariosView.vue')
@@ -91,6 +115,18 @@ const router = createRouter({
       path: '/voluntarios',
       name: 'voluntarios',
       component: () => import('../views/VoluntariosView.vue')
+     },
+
+     {
+      path: '/departamentos',
+      name: 'departamentos',
+      component: () => import('../views/DepartamentosView.vue')
+     },
+
+     {
+      path: '/municipios',
+      name: 'municipios',
+      component: () => import('../views/MunicipiosView.vue')
      },
 
 {

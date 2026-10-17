@@ -12,6 +12,7 @@ import { CampanasModule } from './campanas/campanas.module';
 import { EntregasModule } from './entregas/entregas.module';
 import { AuthModule } from './auth/auth.module';
 import { VoluntariosModule } from './voluntarios/voluntarios.module';
+import { CatalogosModule } from './catalogos/catalogos.module';
 
 @Module({
   imports: [
@@ -48,6 +49,8 @@ import { VoluntariosModule } from './voluntarios/voluntarios.module';
     AuthModule,
 
     VoluntariosModule,
+
+    CatalogosModule,
   ],
   controllers: [AppController],
   providers: [AppService],

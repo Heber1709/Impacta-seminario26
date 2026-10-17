@@ -50,6 +50,7 @@
                 <th>Fin</th>
                 <th>Meta económica</th>
                 <th>Meta productos</th>
+                <th>Acciones</th>
               </tr>
             </thead>
 
@@ -80,6 +81,15 @@
 
                 <td>
                   {{ campana.meta_productos || 0 }}
+                </td>
+                <td>
+                  <button
+                    class="edit-button"
+                    type="button"
+                    @click="editarCampana(campana)"
+                  >
+                    Editar
+                  </button>
                 </td>
               </tr>
             </tbody>
@@ -117,8 +127,11 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import MainLayout from '../layouts/MainLayout.vue'
 import { apiFetch } from '../services/api'
+
+const router = useRouter()
 
 interface Campana {
   id: string
@@ -134,6 +147,10 @@ const campanas = ref<Campana[]>([])
 const busqueda = ref('')
 const loading = ref(true)
 const errorMessage = ref('')
+
+function editarCampana(campana: Campana) {
+  router.push(`/editar-campana/${encodeURIComponent(campana.id)}`)
+}
 
 const campanasFiltradas = computed(() => {
   const texto = busqueda.value.toLowerCase().trim()
@@ -337,6 +354,16 @@ tbody tr:hover {
 .nombre {
   color: #20252b;
   font-weight: 700;
+}
+
+.edit-button {
+  border: 0;
+  padding: 4px 0;
+  background: none;
+  color: #4c9870;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .state-message {

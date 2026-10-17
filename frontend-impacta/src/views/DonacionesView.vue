@@ -11,7 +11,7 @@ interface Donacion {
   codigo_unico: string
   tipo: string
   categoria: string
-  monto?: number
+  monto?: number | null
   fotografia_url?: string
   fecha_ingreso: string
   donante?: {
@@ -27,6 +27,10 @@ const errorMessage = ref('')
 
 function nuevaDonacion() {
   router.push('/nueva-donacion')
+}
+
+function editarDonacion(donacion: Donacion) {
+  router.push(`/editar-donacion/${encodeURIComponent(donacion.id)}`)
 }
 
 async function cargarDonaciones() {
@@ -75,7 +79,7 @@ function formatearFecha(fecha: string) {
   return new Date(fecha).toLocaleDateString('es-GT')
 }
 
-function formatearMonto(monto?: number) {
+function formatearMonto(monto?: number | null) {
   if (monto === undefined || monto === null) {
     return '—'
   }
@@ -188,6 +192,7 @@ onMounted(() => {
                 <th>Categoría</th>
                 <th>Monto</th>
                 <th>Fecha</th>
+                <th>Acciones</th>
               </tr>
             </thead>
 
@@ -218,6 +223,16 @@ onMounted(() => {
 
                 <td>
                   {{ formatearFecha(donacion.fecha_ingreso) }}
+                </td>
+
+                <td>
+                  <button
+                    class="edit-button"
+                    type="button"
+                    @click="editarDonacion(donacion)"
+                  >
+                    Editar
+                  </button>
                 </td>
               </tr>
             </tbody>
@@ -361,6 +376,16 @@ h1 {
 
 .donaciones-table tbody tr:hover {
   background: #f8fbf9;
+}
+
+.edit-button {
+  border: 0;
+  padding: 4px 0;
+  background: none;
+  color: #4c9870;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .empty-state {

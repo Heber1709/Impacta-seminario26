@@ -1,4 +1,12 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Departamento } from '../../catalogos/entities/departamento.entity';
+import { Municipio } from '../../catalogos/entities/municipio.entity';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
 @Entity('voluntarios')
 export class Voluntario {
@@ -14,11 +22,25 @@ export class Voluntario {
   @Column({ length: 255 })
   direccion: string;
 
-  @Column({ length: 100 })
-  municipio: string;
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  codigo_departamento: string | null;
 
-  @Column({ length: 100 })
-  departamento: string;
+  @ManyToOne(() => Departamento, { nullable: true, onDelete: 'RESTRICT' })
+  @JoinColumn({
+    name: 'codigo_departamento',
+    referencedColumnName: 'codigo_departamento',
+  })
+  departamentoCatalogo: Departamento | null;
+
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  codigo_municipio: string | null;
+
+  @ManyToOne(() => Municipio, { nullable: true, onDelete: 'RESTRICT' })
+  @JoinColumn({
+    name: 'codigo_municipio',
+    referencedColumnName: 'codigo_municipio',
+  })
+  municipioCatalogo: Municipio | null;
 
   @Column({ default: true })
   estado: boolean;

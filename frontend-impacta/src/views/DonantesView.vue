@@ -7,7 +7,7 @@ import { apiFetch } from '../services/api'
 const router = useRouter()
 
 interface Donante {
-  id: number
+  id: string
   nombre: string
   tipo: string
   email?: string
@@ -21,6 +21,10 @@ const errorMessage = ref('')
 
 function nuevoDonante() {
   router.push('/nuevo-donante')
+}
+
+function editarDonante(donante: Donante) {
+  router.push(`/editar-donante/${encodeURIComponent(donante.id)}`)
 }
 
 async function cargarDonantes() {
@@ -137,6 +141,7 @@ onMounted(() => {
                 <th>Tipo</th>
                 <th>Correo</th>
                 <th>Teléfono</th>
+                <th>Acciones</th>
               </tr>
             </thead>
 
@@ -149,6 +154,15 @@ onMounted(() => {
                 <td>{{ donante.tipo }}</td>
                 <td>{{ donante.email || '—' }}</td>
                 <td>{{ donante.telefono || '—' }}</td>
+                <td>
+                  <button
+                    class="edit-button"
+                    type="button"
+                    @click="editarDonante(donante)"
+                  >
+                    Editar
+                  </button>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -289,6 +303,16 @@ h1 {
 
 .donantes-table tbody tr:hover {
   background: #f8fbf9;
+}
+
+.edit-button {
+  border: 0;
+  padding: 4px 0;
+  background: none;
+  color: #4c9870;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .empty-state {

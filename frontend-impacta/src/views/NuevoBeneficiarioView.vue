@@ -1,30 +1,165 @@
 ç<script setup lang="ts">
-import { reactive } from 'vue'
-import { useRouter } from 'vue-router'
+import { onMounted, reactive, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import MainLayout from '../layouts/MainLayout.vue'
 import { apiFetch } from '../services/api'
 
 const router = useRouter()
+const route = useRoute()
+const beneficiarioId =
+  typeof route.params.id === 'string' ? route.params.id : ''
+const editando = Boolean(beneficiarioId)
+
+interface Departamento {
+  codigo_departamento: string
+  descripcion: string
+}
+
+interface Municipio {
+  codigo_municipio: string
+  descripcion: string
+  codigo_departamento: string
+}
+
+const departamentos = ref<Departamento[]>([])
+const municipios = ref<Municipio[]>([])
+const cargandoUbicaciones = ref(true)
+const errorUbicaciones = ref('')
+const errorBeneficiario = ref('')
+const avisoUbicacion = ref('')
+const cargandoBeneficiario = ref(false)
+const guardando = ref(false)
 
 const formulario = reactive({
   dpi: '',
   nombre_completo: '',
   direccion: '',
-  municipio: '',
-  departamento: '',
+  codigo_municipio: '',
+  codigo_departamento: '',
   integrantes_hogar: 1
 })
+
+const municipiosDelDepartamento = () =>
+  municipios.value.filter(
+    (municipio) =>
+      municipio.codigo_departamento === formulario.codigo_departamento
+  )
+
+async function cargarUbicaciones() {
+  try {
+    cargandoUbicaciones.value = true
+    errorUbicaciones.value = ''
+
+    const [departamentosResponse, municipiosResponse] = await Promise.all([
+      apiFetch('/catalogos/departamentos'),
+      apiFetch('/catalogos/municipios'),
+    ])
+    const [departamentosData, municipiosData] = await Promise.all([
+      departamentosResponse.json(),
+      municipiosResponse.json(),
+    ])
+
+    if (!departamentosResponse.ok) {
+      throw new Error(
+        departamentosData.message || 'No fue posible cargar los departamentos.'
+      )
+    }
+    if (!municipiosResponse.ok) {
+      throw new Error(
+        municipiosData.message || 'No fue posible cargar los municipios.'
+      )
+    }
+
+    departamentos.value = departamentosData as Departamento[]
+    municipios.value = municipiosData as Municipio[]
+  } catch (error) {
+    console.error(error)
+    errorUbicaciones.value =
+      error instanceof Error
+        ? error.message
+        : 'No fue posible cargar los catálogos de ubicación.'
+  } finally {
+    cargandoUbicaciones.value = false
+  }
+}
+
+function cambiarDepartamento() {
+  formulario.codigo_municipio = ''
+}
 
 function volver() {
   router.push('/beneficiarios')
 }
 
+async function cargarBeneficiario() {
+  try {
+    cargandoBeneficiario.value = true
+    errorBeneficiario.value = ''
+    const response = await apiFetch(
+      `/beneficiarios/${encodeURIComponent(beneficiarioId)}`
+    )
+    const data = await response.json()
+    if (!response.ok) {
+      throw new Error(
+        data.message || 'No fue posible cargar el beneficiario.'
+      )
+    }
+
+    const departamento =
+      departamentos.value.find(
+        (item) => item.codigo_departamento === data.codigo_departamento
+      )
+    const municipio =
+      municipios.value.find(
+        (item) =>
+          item.codigo_municipio === data.codigo_municipio &&
+          item.codigo_departamento === departamento?.codigo_departamento
+      )
+
+    formulario.dpi = data.dpi
+    formulario.nombre_completo = data.nombre_completo
+    formulario.direccion = data.direccion
+    formulario.integrantes_hogar = data.integrantes_hogar
+    formulario.codigo_departamento = departamento?.codigo_departamento ?? ''
+    formulario.codigo_municipio = municipio?.codigo_municipio ?? ''
+    avisoUbicacion.value =
+      !departamento || !municipio
+        ? 'Este registro todavía no tiene una ubicación asociada a los catálogos. Selecciona un departamento y municipio antes de guardar.'
+        : ''
+  } catch (error) {
+    console.error(error)
+    errorBeneficiario.value =
+      error instanceof Error
+        ? error.message
+        : 'No fue posible cargar el beneficiario.'
+  } finally {
+    cargandoBeneficiario.value = false
+  }
+}
+
 async function guardarBeneficiario() {
   try {
-    const response = await apiFetch('/beneficiarios', {
-      method: 'POST',
-      body: JSON.stringify(formulario)
-    })
+    guardando.value = true
+    errorBeneficiario.value = ''
+    const departamento = departamentos.value.find(
+      (item) => item.codigo_departamento === formulario.codigo_departamento
+    )
+    const municipio = municipiosDelDepartamento().find(
+      (item) => item.codigo_municipio === formulario.codigo_municipio
+    )
+    if (!departamento || !municipio) {
+      throw new Error('Selecciona un departamento y un municipio válidos.')
+    }
+
+    const response = await apiFetch(
+      editando
+        ? `/beneficiarios/${encodeURIComponent(beneficiarioId)}`
+        : '/beneficiarios',
+      {
+        method: editando ? 'PATCH' : 'POST',
+        body: JSON.stringify(formulario)
+      }
+    )
 
     const data = await response.json()
 
@@ -32,20 +167,31 @@ async function guardarBeneficiario() {
       throw new Error(data.message || 'No fue posible guardar el beneficiario.')
     }
 
-    alert('Beneficiario guardado correctamente.')
+    alert(
+      editando
+        ? 'Beneficiario actualizado correctamente.'
+        : 'Beneficiario guardado correctamente.'
+    )
     router.push('/beneficiarios')
 
   } catch (error) {
     console.error(error)
 
-    alert(
+    errorBeneficiario.value =
       error instanceof Error
         ? error.message
         : 'No fue posible guardar el beneficiario.'
-    )
+  } finally {
+    guardando.value = false
   }
 }    
 
+onMounted(async () => {
+  await cargarUbicaciones()
+  if (editando && !errorUbicaciones.value) {
+    await cargarBeneficiario()
+  }
+})
 
 </script>
 
@@ -57,9 +203,13 @@ async function guardarBeneficiario() {
       <div class="page-header">
         <div>
           <span class="section-label">GESTIÓN</span>
-          <h1>Nuevo beneficiario</h1>
+          <h1>{{ editando ? 'Editar beneficiario' : 'Nuevo beneficiario' }}</h1>
           <p>
-            Registra la información de una persona beneficiada por Impacta.
+            {{
+              editando
+                ? 'Actualiza la información del beneficiario.'
+                : 'Registra la información de una persona beneficiada por Impacta.'
+            }}
           </p>
         </div>
 
@@ -68,14 +218,34 @@ async function guardarBeneficiario() {
             Cancelar
           </button>
 
-          <button class="btn-primary" type="button" @click="guardarBeneficiario">
-            Guardar beneficiario
+          <button
+            class="btn-primary"
+            type="button"
+            :disabled="guardando || cargandoUbicaciones || cargandoBeneficiario"
+            @click="guardarBeneficiario"
+          >
+            {{
+              guardando
+                ? 'Guardando...'
+                : editando
+                  ? 'Guardar cambios'
+                  : 'Guardar beneficiario'
+            }}
           </button>
         </div>
       </div>
 
       <!-- FORMULARIO -->
-      <form class="form-container">
+      <form class="form-container" @submit.prevent="guardarBeneficiario">
+        <div v-if="errorBeneficiario" class="location-error" role="alert">
+          {{ errorBeneficiario }}
+        </div>
+        <div v-if="avisoUbicacion" class="location-hint" role="status">
+          {{ avisoUbicacion }}
+        </div>
+        <div v-if="cargandoBeneficiario" class="location-hint" role="status">
+          Cargando información del beneficiario...
+        </div>
 
         <!-- INFORMACIÓN PERSONAL -->
         <section class="form-card">
@@ -136,27 +306,80 @@ async function guardarBeneficiario() {
 
             <div class="form-group">
               <label for="municipio">Municipio</label>
-              <input
+              <select
                 id="municipio"
-                v-model="formulario.municipio"
-                type="text"
-                maxlength="100"
-                placeholder="Municipio"
-              />
+                v-model="formulario.codigo_municipio"
+                :disabled="cargandoUbicaciones || !formulario.codigo_departamento"
+                required
+              >
+                <option value="" disabled>
+                  {{
+                    cargandoUbicaciones
+                      ? 'Cargando municipios...'
+                      : 'Selecciona un municipio'
+                  }}
+                </option>
+                <option
+                  v-for="municipio in municipiosDelDepartamento()"
+                  :key="municipio.codigo_municipio"
+                  :value="municipio.codigo_municipio"
+                >
+                  {{ municipio.descripcion }}
+                </option>
+              </select>
             </div>
 
             <div class="form-group">
               <label for="departamento">Departamento</label>
-              <input
+              <select
                 id="departamento"
-                v-model="formulario.departamento"
-                type="text"
-                maxlength="100"
-                placeholder="Departamento"
-              />
+                v-model="formulario.codigo_departamento"
+                :disabled="cargandoUbicaciones"
+                required
+                @change="cambiarDepartamento"
+              >
+                <option value="" disabled>
+                  {{
+                    cargandoUbicaciones
+                      ? 'Cargando departamentos...'
+                      : 'Selecciona un departamento'
+                  }}
+                </option>
+                <option
+                  v-for="departamento in departamentos"
+                  :key="departamento.codigo_departamento"
+                  :value="departamento.codigo_departamento"
+                >
+                  {{ departamento.descripcion }}
+                </option>
+              </select>
             </div>
 
           </div>
+          <p v-if="errorUbicaciones" class="location-error" role="alert">
+            {{ errorUbicaciones }}
+            <button type="button" class="retry-button" @click="cargarUbicaciones">
+              Intentar de nuevo
+            </button>
+          </p>
+          <p
+            v-else-if="!cargandoUbicaciones && departamentos.length === 0"
+            class="location-hint"
+          >
+            Registra primero un
+            <RouterLink to="/departamentos">departamento</RouterLink>
+            y sus municipios.
+          </p>
+          <p
+            v-else-if="
+              formulario.codigo_departamento &&
+              municipiosDelDepartamento().length === 0
+            "
+            class="location-hint"
+          >
+            Este departamento todavía no tiene municipios.
+            <RouterLink to="/municipios">Agregar municipios</RouterLink>
+          </p>
         </section>
 
         <!-- INFORMACIÓN DEL HOGAR -->
@@ -325,7 +548,8 @@ button {
   margin-bottom: 8px;
 }
 
-.form-group input {
+.form-group input,
+.form-group select {
   width: 100%;
   box-sizing: border-box;
   padding: 12px 14px;
@@ -339,7 +563,8 @@ button {
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.form-group input:focus {
+.form-group input:focus,
+.form-group select:focus {
   border-color: #71927b;
   box-shadow: 0 0 0 3px rgba(69, 107, 82, 0.08);
   background: white;
@@ -347,6 +572,31 @@ button {
 
 .form-group input::placeholder {
   color: #a4aca6;
+}
+
+.location-error {
+  margin: 18px 0 0;
+  color: #b54747;
+  font-size: 13px;
+}
+
+.location-hint {
+  margin: 18px 0 0;
+  color: #71807b;
+  font-size: 13px;
+}
+
+.location-hint a {
+  color: #456b52;
+  font-weight: 600;
+}
+
+.retry-button {
+  margin-left: 8px;
+  padding: 0;
+  background: none;
+  color: #456b52;
+  text-decoration: underline;
 }
 
 .input-help {
@@ -380,4 +630,3 @@ button {
   }
 }
 </style>
-
