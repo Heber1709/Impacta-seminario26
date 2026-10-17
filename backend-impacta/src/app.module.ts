@@ -11,6 +11,7 @@ import { InventarioModule } from './inventario/inventario.module';
 import { CampanasModule } from './campanas/campanas.module';
 import { EntregasModule } from './entregas/entregas.module';
 import { AuthModule } from './auth/auth.module';
+import { VoluntariosModule } from './voluntarios/voluntarios.module';
 
 @Module({
   imports: [
@@ -45,6 +46,8 @@ import { AuthModule } from './auth/auth.module';
     EntregasModule,
 
     AuthModule,
+
+    VoluntariosModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -25,6 +25,11 @@
           <span>Beneficiarios</span>
         </RouterLink>
 
+        <RouterLink to="/voluntarios" class="menu-item" exact-active-class="active">
+          <span>♟</span>
+          <span>Voluntarios</span>
+        </RouterLink>
+
         <RouterLink to="/donantes" class="menu-item">
           <span>♧</span>
           <span>Donantes</span>
