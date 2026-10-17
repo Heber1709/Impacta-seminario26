@@ -26,6 +26,11 @@
           <span>Beneficiarios</span>
         </RouterLink>
 
+        <RouterLink v-if="can('beneficiarios', 'consultar')" to="/entregas" class="menu-item" exact-active-class="active">
+          <span>↗</span>
+          <span>Entregas</span>
+        </RouterLink>
+
         <RouterLink v-if="can('voluntarios', 'consultar')" to="/voluntarios" class="menu-item" exact-active-class="active">
           <span>♟</span>
           <span>Voluntarios</span>

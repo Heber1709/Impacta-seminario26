@@ -4,8 +4,14 @@
       <div class="page-header">
         <div>
           <span class="eyebrow">GESTIÓN DE ENTREGAS</span>
-          <h1>Nueva entrega</h1>
-          <p>Registra la entrega de apoyo a un beneficiario.</p>
+          <h1>{{ editando ? 'Editar entrega' : 'Nueva entrega' }}</h1>
+          <p>
+            {{
+              editando
+                ? 'Actualiza los datos y el equipo asignado a esta entrega.'
+                : 'Registra la entrega de apoyo a un beneficiario.'
+            }}
+          </p>
         </div>
       </div>
 
@@ -54,6 +60,27 @@
             </select>
           </div>
 
+          <div v-if="puedeConsultarVoluntarios" class="form-group full">
+            <label for="voluntarios">
+              Voluntarios <span>(opcional; selección múltiple)</span>
+            </label>
+            <select
+              id="voluntarios"
+              v-model="formulario.voluntarios_ids"
+              multiple
+              size="5"
+            >
+              <option
+                v-for="voluntario in voluntarios"
+                :key="voluntario.id"
+                :value="voluntario.id"
+              >
+                {{ voluntario.nombre_completo }}
+              </option>
+            </select>
+            <small>Mantén Ctrl (Windows) o Cmd (Mac) para elegir varios.</small>
+          </div>
+
           <div class="form-group full">
             <label for="evidencia">URL de evidencia <span>(opcional)</span></label>
             <input
@@ -84,7 +111,13 @@
               guardando || cargando || beneficiarios.length === 0 || Boolean(mensaje)
             "
           >
-            {{ guardando ? 'Guardando...' : 'Registrar entrega' }}
+            {{
+              guardando
+                ? 'Guardando...'
+                : editando
+                  ? 'Guardar cambios'
+                  : 'Registrar entrega'
+            }}
           </button>
         </div>
       </form>
@@ -94,7 +127,7 @@
 
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import MainLayout from '../layouts/MainLayout.vue'
 import { apiFetch } from '../services/api'
 import { currentUser, hasPermission } from '../services/permissions'
@@ -109,46 +142,64 @@ interface Campana {
   nombre: string
 }
 
+interface Voluntario {
+  id: string
+  nombre_completo: string
+}
+
 const router = useRouter()
+const route = useRoute()
+const entregaId = typeof route.params.id === 'string' ? route.params.id : ''
+const editando = Boolean(entregaId)
 const beneficiarios = ref<Beneficiario[]>([])
 const campanas = ref<Campana[]>([])
+const voluntarios = ref<Voluntario[]>([])
 const cargando = ref(true)
 const guardando = ref(false)
 const error = ref('')
 const mensaje = ref('')
 const usuarioId = currentUser()?.id ?? ''
 const puedeConsultarCampanas = hasPermission('campanas', 'consultar')
+const puedeConsultarVoluntarios = hasPermission('voluntarios', 'consultar')
 
 const formulario = reactive({
   beneficiario_id: '',
   campana_id: '',
+  voluntarios_ids: [] as string[],
   evidencia_url: '',
 })
 
 function volver() {
-  router.push('/dashboard')
+  router.push('/entregas')
 }
 
 async function cargarOpciones() {
   try {
     error.value = ''
-    const opciones = await Promise.all([
-      apiFetch('/beneficiarios'),
-      ...(puedeConsultarCampanas ? [apiFetch('/campanas')] : []),
+    const [respuestaBeneficiarios, respuestaCampanas, respuestaVoluntarios] =
+      await Promise.all([
+        apiFetch('/beneficiarios'),
+        puedeConsultarCampanas ? apiFetch('/campanas') : Promise.resolve(null),
+        puedeConsultarVoluntarios
+          ? apiFetch('/voluntarios')
+          : Promise.resolve(null),
     ])
-    const respuestas = await Promise.all(opciones.map((response) => response.json()))
+    const [datosBeneficiarios, datosCampanas, datosVoluntarios] =
+      await Promise.all([
+        respuestaBeneficiarios.json(),
+        respuestaCampanas?.json() ?? Promise.resolve(null),
+        respuestaVoluntarios?.json() ?? Promise.resolve(null),
+      ])
 
-    if (!opciones[0].ok) {
+    if (!respuestaBeneficiarios.ok) {
       throw new Error(
-        respuestas[0].message || 'No fue posible cargar los beneficiarios.'
+        datosBeneficiarios.message || 'No fue posible cargar los beneficiarios.'
       )
     }
-    beneficiarios.value = respuestas[0] as Beneficiario[]
+    beneficiarios.value = datosBeneficiarios as Beneficiario[]
 
     if (puedeConsultarCampanas) {
-      const respuestaCampanas = opciones[1]
-      const datosCampanas = respuestas[1]
-      if (!respuestaCampanas.ok) {
+      if (!respuestaCampanas?.ok) {
         throw new Error(
           datosCampanas.message || 'No fue posible cargar las campañas.'
         )
@@ -156,11 +207,38 @@ async function cargarOpciones() {
       campanas.value = datosCampanas as Campana[]
     }
 
+    if (puedeConsultarVoluntarios) {
+      if (!respuestaVoluntarios?.ok) {
+        throw new Error(
+          datosVoluntarios.message || 'No fue posible cargar los voluntarios.'
+        )
+      }
+      voluntarios.value = datosVoluntarios as Voluntario[]
+    }
+
     if (beneficiarios.value.length === 0) {
       error.value = 'No hay beneficiarios disponibles para registrar una entrega.'
     }
-    if (!usuarioId) {
+    if (!editando && !usuarioId) {
       throw new Error('No fue posible identificar al usuario de la sesión.')
+    }
+    if (editando) {
+      const respuestaEntrega = await apiFetch(
+        `/entregas/${encodeURIComponent(entregaId)}`
+      )
+      const datosEntrega = await respuestaEntrega.json()
+      if (!respuestaEntrega.ok) {
+        throw new Error(
+          datosEntrega.message || 'No fue posible cargar la entrega.'
+        )
+      }
+      formulario.beneficiario_id = datosEntrega.beneficiario?.id ?? ''
+      formulario.campana_id = datosEntrega.campana?.id ?? ''
+      formulario.voluntarios_ids = (datosEntrega.voluntarios ?? []).map(
+        (item: string | { id: string }) =>
+          typeof item === 'string' ? item : item.id
+      )
+      formulario.evidencia_url = datosEntrega.evidencia_url ?? ''
     }
   } catch (cause) {
     console.error('Error al cargar las opciones de la entrega:', cause)
@@ -179,19 +257,33 @@ async function guardarEntrega() {
     error.value = ''
     mensaje.value = ''
 
-    if (!usuarioId) {
+    if (!editando && !usuarioId) {
       throw new Error('No fue posible identificar al usuario de la sesión.')
     }
 
-    const response = await apiFetch('/entregas', {
-      method: 'POST',
-      body: JSON.stringify({
-        beneficiario_id: formulario.beneficiario_id,
-        usuario_id: usuarioId,
-        campana_id: formulario.campana_id || undefined,
-        evidencia_url: formulario.evidencia_url.trim() || undefined,
-      }),
-    })
+    const payload: Record<string, unknown> = {
+      beneficiario_id: formulario.beneficiario_id,
+      campana_id: puedeConsultarCampanas
+        ? formulario.campana_id || null
+        : undefined,
+      voluntarios_ids: puedeConsultarVoluntarios
+        ? formulario.voluntarios_ids
+        : undefined,
+      evidencia_url: formulario.evidencia_url.trim() || null,
+    }
+    if (!editando) {
+      payload.usuario_id = usuarioId
+    }
+
+    const response = await apiFetch(
+      editando
+        ? `/entregas/${encodeURIComponent(entregaId)}`
+        : '/entregas',
+      {
+        method: editando ? 'PATCH' : 'POST',
+        body: JSON.stringify(payload),
+      }
+    )
     const data = await response.json()
     if (!response.ok) {
       throw new Error(
@@ -201,7 +293,9 @@ async function guardarEntrega() {
       )
     }
 
-    mensaje.value = 'Entrega registrada correctamente.'
+    mensaje.value = editando
+      ? 'Entrega actualizada correctamente.'
+      : 'Entrega registrada correctamente.'
     window.setTimeout(volver, 800)
   } catch (cause) {
     console.error('Error al registrar la entrega:', cause)
@@ -292,6 +386,11 @@ onMounted(cargarOpciones)
   color: #263b35;
   font: inherit;
   box-sizing: border-box;
+}
+
+.form-group small {
+  color: #76837e;
+  font-size: 12px;
 }
 
 .form-message {

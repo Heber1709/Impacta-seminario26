@@ -1,4 +1,11 @@
-import { IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
+import {
+  ArrayUnique,
+  IsArray,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUUID,
+} from 'class-validator';
 
 export class CreateEntregaDto {
   @IsString()
@@ -19,5 +26,11 @@ export class CreateEntregaDto {
 
   @IsUUID()
   @IsOptional()
-  campana_id?: string;
+  campana_id?: string | null;
+
+  @IsArray()
+  @ArrayUnique()
+  @IsUUID('all', { each: true })
+  @IsOptional()
+  voluntarios_ids?: string[];
 }
