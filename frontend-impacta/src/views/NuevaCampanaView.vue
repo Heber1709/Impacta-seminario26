@@ -5,12 +5,21 @@
       <div class="page-header">
         <div>
           <span class="eyebrow">GESTIÓN DE CAMPAÑAS</span>
-          <h1>Nueva campaña</h1>
-          <p>Completa los datos para registrar una nueva campaña.</p>
+          <h1>{{ editando ? 'Editar campaña' : 'Nueva campaña' }}</h1>
+          <p>
+            {{
+              editando
+                ? 'Actualiza los datos de la campaña.'
+                : 'Completa los datos para registrar una nueva campaña.'
+            }}
+          </p>
         </div>
       </div>
 
-      <div class="form-card">
+      <form class="form-card" @submit.prevent="guardarCampana">
+        <div v-if="cargandoCampana" class="mensaje" role="status">
+          Cargando información de la campaña...
+        </div>
 
         <div class="form-grid">
 
@@ -19,6 +28,8 @@
             <input
               v-model="formulario.nombre"
               type="text"
+              maxlength="200"
+              required
               placeholder="Ej. Alimentando Esperanzas"
             />
           </div>
@@ -27,6 +38,7 @@
             <label>Objetivo</label>
             <textarea
               v-model="formulario.objetivo"
+              required
               placeholder="Describe el objetivo de la campaña..."
               rows="4"
             ></textarea>
@@ -37,6 +49,7 @@
             <input
               v-model="formulario.fecha_inicio"
               type="date"
+              required
             />
           </div>
 
@@ -80,34 +93,41 @@
           <button
             type="button"
             class="btn-secondary"
-            @click="$router.push('/campanas')"
+            @click="volver"
           >
             Cancelar
           </button>
 
           <button
-            type="button"
+            type="submit"
             class="btn-primary"
-            :disabled="guardando"
-            @click="guardarCampana"
+            :disabled="guardando || cargandoCampana"
           >
-            {{ guardando ? 'Guardando...' : 'Guardar campaña' }}
+            {{
+              guardando
+                ? 'Guardando...'
+                : editando
+                  ? 'Guardar cambios'
+                  : 'Guardar campaña'
+            }}
           </button>
         </div>
-
-      </div>
+      </form>
 
     </div>
   </MainLayout>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import MainLayout from '../layouts/MainLayout.vue'
 import { apiFetch } from '../services/api'
 
 const router = useRouter()
+const route = useRoute()
+const campanaId = typeof route.params.id === 'string' ? route.params.id : ''
+const editando = Boolean(campanaId)
 
 const formulario = ref({
   nombre: '',
@@ -119,8 +139,51 @@ const formulario = ref({
 })
 
 const guardando = ref(false)
+const cargandoCampana = ref(false)
 const mensaje = ref('')
 const tipoMensaje = ref<'success' | 'error'>('error')
+
+function volver() {
+  router.push('/campanas')
+}
+
+async function cargarCampana() {
+  try {
+    cargandoCampana.value = true
+    mensaje.value = ''
+    const response = await apiFetch(
+      `/campanas/${encodeURIComponent(campanaId)}`
+    )
+    const data = await response.json()
+    if (!response.ok) {
+      throw new Error(
+        Array.isArray(data.message)
+          ? data.message.join(', ')
+          : data.message || 'No fue posible cargar la campaña.'
+      )
+    }
+
+    formulario.value = {
+      nombre: data.nombre,
+      objetivo: data.objetivo,
+      fecha_inicio: String(data.fecha_inicio).slice(0, 10),
+      fecha_fin: data.fecha_fin ? String(data.fecha_fin).slice(0, 10) : '',
+      meta_economica:
+        data.meta_economica == null ? null : Number(data.meta_economica),
+      meta_productos:
+        data.meta_productos == null ? null : Number(data.meta_productos),
+    }
+  } catch (error) {
+    console.error(error)
+    tipoMensaje.value = 'error'
+    mensaje.value =
+      error instanceof Error
+        ? error.message
+        : 'No fue posible cargar la campaña.'
+  } finally {
+    cargandoCampana.value = false
+  }
+}
 
 async function guardarCampana() {
   mensaje.value = ''
@@ -156,17 +219,24 @@ async function guardarCampana() {
   try {
     guardando.value = true
 
-    const response = await apiFetch('/campanas', {
-      method: 'POST',
-      body: JSON.stringify({
-        nombre: formulario.value.nombre.trim(),
-        objetivo: formulario.value.objetivo.trim(),
-        fecha_inicio: formulario.value.fecha_inicio,
-        fecha_fin: formulario.value.fecha_fin || undefined,
-        meta_economica: formulario.value.meta_economica ?? undefined,
-        meta_productos: formulario.value.meta_productos ?? undefined
-      })
-    })
+    const response = await apiFetch(
+      editando
+        ? `/campanas/${encodeURIComponent(campanaId)}`
+        : '/campanas',
+      {
+        method: editando ? 'PATCH' : 'POST',
+        body: JSON.stringify({
+          nombre: formulario.value.nombre.trim(),
+          objetivo: formulario.value.objetivo.trim(),
+          fecha_inicio: formulario.value.fecha_inicio,
+          fecha_fin: formulario.value.fecha_fin || (editando ? null : undefined),
+          meta_economica:
+            formulario.value.meta_economica ?? (editando ? 0 : undefined),
+          meta_productos:
+            formulario.value.meta_productos ?? (editando ? 0 : undefined),
+        }),
+      }
+    )
 
     const data = await response.json()
 
@@ -174,15 +244,18 @@ async function guardarCampana() {
       throw new Error(
         Array.isArray(data.message)
           ? data.message.join(', ')
-          : data.message || 'No fue posible registrar la campaña.'
+          : data.message ||
+            `No fue posible ${editando ? 'actualizar' : 'registrar'} la campaña.`
       )
     }
 
     tipoMensaje.value = 'success'
-    mensaje.value = 'Campaña registrada correctamente.'
+    mensaje.value = editando
+      ? 'Campaña actualizada correctamente.'
+      : 'Campaña registrada correctamente.'
 
     setTimeout(() => {
-      router.push('/campanas')
+      volver()
     }, 800)
 
   } catch (error) {
@@ -197,6 +270,12 @@ async function guardarCampana() {
     guardando.value = false
   }
 }
+
+onMounted(() => {
+  if (editando) {
+    cargarCampana()
+  }
+})
 </script>
 
 <style scoped>

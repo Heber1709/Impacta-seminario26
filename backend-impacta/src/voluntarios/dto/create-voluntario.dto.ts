@@ -1,4 +1,8 @@
-import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsString,
+  MaxLength,
+} from 'class-validator';
 
 export class CreateVoluntarioDto {
   @IsString()
@@ -18,11 +22,11 @@ export class CreateVoluntarioDto {
 
   @IsString()
   @IsNotEmpty()
-  @MaxLength(100)
-  municipio: string;
+  @MaxLength(20)
+  codigo_departamento: string;
 
   @IsString()
   @IsNotEmpty()
-  @MaxLength(100)
-  departamento: string;
+  @MaxLength(20)
+  codigo_municipio: string;
 }

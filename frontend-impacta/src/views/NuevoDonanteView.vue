@@ -4,22 +4,25 @@
       <div class="page-header">
         <div>
           <span class="eyebrow">GESTIÓN</span>
-          <h1>Nuevo donante</h1>
-          <p>Registra una persona u organización que apoya a Impacta.</p>
+          <h1>{{ editando ? 'Editar donante' : 'Nuevo donante' }}</h1>
+          <p>
+            {{
+              editando
+                ? 'Actualiza la información de la persona u organización donante.'
+                : 'Registra una persona u organización que apoya a Impacta.'
+            }}
+          </p>
         </div>
 
-        <div class="header-actions">
-          <button class="btn-secondary" type="button" @click="volver">
-            Cancelar
-          </button>
-
-          <button class="btn-primary" type="button" @click="guardarDonante">
-            Guardar donante
-          </button>
-        </div>
       </div>
 
-      <div class="form-card">
+      <form class="form-card" @submit.prevent="guardarDonante">
+        <p v-if="cargandoDonante" class="form-message" role="status">
+          Cargando información del donante...
+        </p>
+        <p v-if="mensaje" class="form-message error-message" role="alert">
+          {{ mensaje }}
+        </p>
         <div class="form-section">
           <h2>Información del donante</h2>
           <p>Completa los datos necesarios para registrar al donante.</p>
@@ -32,13 +35,14 @@
               v-model="formulario.nombre"
               type="text"
               maxlength="200"
+              required
               placeholder="Ej. Empresa o persona donante"
             />
           </div>
 
           <div class="form-group">
             <label>Tipo de donante</label>
-            <select v-model="formulario.tipo">
+            <select v-model="formulario.tipo" required>
               <option value="">Selecciona una opción</option>
               <option value="INDIVIDUAL">Individual</option>
               <option value="EMPRESA">Empresa</option>
@@ -66,18 +70,42 @@
             />
           </div>
         </div>
-      </div>
+        <div class="form-actions">
+          <button class="btn-secondary" type="button" @click="volver">
+            Cancelar
+          </button>
+          <button
+            class="btn-primary"
+            type="submit"
+            :disabled="guardando || cargandoDonante"
+          >
+            {{
+              guardando
+                ? 'Guardando...'
+                : editando
+                  ? 'Guardar cambios'
+                  : 'Guardar donante'
+            }}
+          </button>
+        </div>
+      </form>
     </div>
   </MainLayout>
 </template>
 
 <script setup lang="ts">
-import { reactive } from 'vue'
-import { useRouter } from 'vue-router'
+import { onMounted, reactive, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import MainLayout from '../layouts/MainLayout.vue'
 import { apiFetch } from '../services/api'
 
 const router = useRouter()
+const route = useRoute()
+const donanteId = typeof route.params.id === 'string' ? route.params.id : ''
+const editando = Boolean(donanteId)
+const guardando = ref(false)
+const cargandoDonante = ref(false)
+const mensaje = ref('')
 
 const formulario = reactive({
   nombre: '',
@@ -90,17 +118,51 @@ function volver() {
   router.push('/donantes')
 }
 
+async function cargarDonante() {
+  try {
+    cargandoDonante.value = true
+    mensaje.value = ''
+    const response = await apiFetch(
+      `/donantes/${encodeURIComponent(donanteId)}`
+    )
+    const data = await response.json()
+    if (!response.ok) {
+      throw new Error(data.message || 'No fue posible cargar el donante.')
+    }
+
+    formulario.nombre = data.nombre
+    formulario.tipo = data.tipo
+    formulario.email = data.email ?? ''
+    formulario.telefono = data.telefono ?? ''
+  } catch (error) {
+    console.error(error)
+    mensaje.value =
+      error instanceof Error
+        ? error.message
+        : 'No fue posible cargar el donante.'
+  } finally {
+    cargandoDonante.value = false
+  }
+}
+
 async function guardarDonante() {
   try {
-    const response = await apiFetch('/donantes', {
-      method: 'POST',
-      body: JSON.stringify({
-        nombre: formulario.nombre,
-        tipo: formulario.tipo,
-        email: formulario.email || undefined,
-        telefono: formulario.telefono || undefined
-      })
-    })
+    guardando.value = true
+    mensaje.value = ''
+    const response = await apiFetch(
+      editando
+        ? `/donantes/${encodeURIComponent(donanteId)}`
+        : '/donantes',
+      {
+        method: editando ? 'PATCH' : 'POST',
+        body: JSON.stringify({
+          nombre: formulario.nombre.trim(),
+          tipo: formulario.tipo,
+          email: formulario.email.trim() || null,
+          telefono: formulario.telefono.trim() || null,
+        }),
+      }
+    )
 
     const data = await response.json()
 
@@ -108,18 +170,29 @@ async function guardarDonante() {
       throw new Error(data.message || 'No fue posible guardar el donante.')
     }
 
-    alert('Donante guardado correctamente.')
+    alert(
+      editando
+        ? 'Donante actualizado correctamente.'
+        : 'Donante guardado correctamente.'
+    )
     router.push('/donantes')
   } catch (error) {
     console.error(error)
 
-    alert(
+    mensaje.value =
       error instanceof Error
         ? error.message
         : 'Ocurrió un error al guardar el donante.'
-    )
+  } finally {
+    guardando.value = false
   }
 }
+
+onMounted(() => {
+  if (editando) {
+    cargarDonante()
+  }
+})
 </script>
 
 <style scoped>
@@ -177,6 +250,27 @@ button {
   background: white;
   color: #40504d;
   border: 1px solid #d9e2df;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.form-message {
+  margin: 0 0 20px;
+  color: #59645f;
+}
+
+.error-message {
+  color: #a53b3b;
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .form-card {

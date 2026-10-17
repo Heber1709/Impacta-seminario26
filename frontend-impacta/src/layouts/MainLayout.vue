@@ -30,6 +30,16 @@
           <span>Voluntarios</span>
         </RouterLink>
 
+        <RouterLink to="/departamentos" class="menu-item" exact-active-class="active">
+          <span>▤</span>
+          <span>Departamentos</span>
+        </RouterLink>
+
+        <RouterLink to="/municipios" class="menu-item" exact-active-class="active">
+          <span>⌖</span>
+          <span>Municipios</span>
+        </RouterLink>
+
         <RouterLink to="/donantes" class="menu-item">
           <span>♧</span>
           <span>Donantes</span>

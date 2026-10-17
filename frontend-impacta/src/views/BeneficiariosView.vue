@@ -8,23 +8,57 @@ import { apiFetch } from '../services/api'
 const router = useRouter()
 
 interface Beneficiario {
-  id: number
+  id: string
   dpi: string
   nombre_completo: string
   direccion: string
-  municipio: string
-  departamento: string
+  codigo_municipio: string | null
+  codigo_departamento: string | null
   integrantes_hogar: number
   estado: boolean
 }
 
+interface Departamento {
+  codigo_departamento: string
+  descripcion: string
+}
+
+interface Municipio {
+  codigo_municipio: string
+  descripcion: string
+  codigo_departamento: string
+}
+
 const beneficiarios = ref<Beneficiario[]>([])
+const departamentos = ref<Departamento[]>([])
+const municipios = ref<Municipio[]>([])
 const busqueda = ref('')
 const cargando = ref(true)
 const errorMessage = ref('')
 
+function nombreDepartamento(beneficiario: Beneficiario) {
+  return (
+    departamentos.value.find(
+      (departamento) =>
+        departamento.codigo_departamento === beneficiario.codigo_departamento
+    )?.descripcion ?? 'Sin asignar'
+  )
+}
+
+function nombreMunicipio(beneficiario: Beneficiario) {
+  return (
+    municipios.value.find(
+      (municipio) => municipio.codigo_municipio === beneficiario.codigo_municipio
+    )?.descripcion ?? 'Sin asignar'
+  )
+}
+
 function nuevoBeneficiario() {
   router.push('/nuevo-beneficiario')
+}
+
+function editarBeneficiario(beneficiario: Beneficiario) {
+  router.push(`/editar-beneficiario/${encodeURIComponent(beneficiario.id)}`)
 }
 
 async function cargarBeneficiarios() {
@@ -63,13 +97,35 @@ const beneficiariosFiltrados = computed(() => {
   return beneficiarios.value.filter((beneficiario) =>
     beneficiario.nombre_completo.toLowerCase().includes(texto) ||
     beneficiario.dpi.includes(texto) ||
-    beneficiario.municipio.toLowerCase().includes(texto)
+    nombreMunicipio(beneficiario).toLowerCase().includes(texto) ||
+    nombreDepartamento(beneficiario).toLowerCase().includes(texto)
   )
 })
 
 onMounted(() => {
   cargarBeneficiarios()
+  cargarCatalogos()
 })
+
+async function cargarCatalogos() {
+  try {
+    const [departamentosResponse, municipiosResponse] = await Promise.all([
+      apiFetch('/catalogos/departamentos'),
+      apiFetch('/catalogos/municipios'),
+    ])
+    const [departamentosData, municipiosData] = await Promise.all([
+      departamentosResponse.json(),
+      municipiosResponse.json(),
+    ])
+    if (!departamentosResponse.ok || !municipiosResponse.ok) {
+      throw new Error('No fue posible cargar los catálogos de ubicación.')
+    }
+    departamentos.value = departamentosData as Departamento[]
+    municipios.value = municipiosData as Municipio[]
+  } catch (error) {
+    console.error(error)
+  }
+}
 </script>
 <template>
   <MainLayout>
@@ -139,6 +195,7 @@ onMounted(() => {
         <th>Municipio</th>
         <th>Departamento</th>
         <th>Integrantes</th>
+        <th>Acciones</th>
       </tr>
     </thead>
 
@@ -149,9 +206,18 @@ onMounted(() => {
       >
         <td>{{ beneficiario.dpi }}</td>
         <td>{{ beneficiario.nombre_completo }}</td>
-        <td>{{ beneficiario.municipio }}</td>
-        <td>{{ beneficiario.departamento }}</td>
+        <td>{{ nombreMunicipio(beneficiario) }}</td>
+        <td>{{ nombreDepartamento(beneficiario) }}</td>
         <td>{{ beneficiario.integrantes_hogar }}</td>
+        <td>
+          <button
+            class="edit-button"
+            type="button"
+            @click="editarBeneficiario(beneficiario)"
+          >
+            Editar
+          </button>
+        </td>
       </tr>
     </tbody>
   </table>
@@ -297,6 +363,16 @@ onMounted(() => {
   font-size: 14px;
   font-weight: 400;
   border-top: 1px solid #edf1ef;
+}
+
+.edit-button {
+  border: 0;
+  padding: 4px 0;
+  background: none;
+  color: #4c9870;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .empty-state {
