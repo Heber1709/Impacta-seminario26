@@ -3,6 +3,7 @@ import { computed, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import MainLayout from '../layouts/MainLayout.vue'
 import { apiFetch } from '../services/api'
+import { hasPermission as can } from '../services/permissions'
 
 const router = useRouter()
 
@@ -41,6 +42,18 @@ const totalMontoMonetario = ref(0)
 
 function nuevoBeneficiario() {
   router.push('/nuevo-beneficiario')
+}
+
+function registrarDonacion() {
+  router.push('/nueva-donacion')
+}
+
+function nuevaEntrega() {
+  router.push('/nueva-entrega')
+}
+
+function nuevaCampana() {
+  router.push('/nueva-campana')
 }
 
 async function cargarTotalBeneficiarios() {
@@ -130,11 +143,19 @@ async function cargarCampanaActiva() {
 }
 
 onMounted(() => {
-  cargarTotalBeneficiarios()
-  cargarTotalDonantes()
-  cargarTotalDonaciones()
-  cargarTotalEntregas()
-  cargarCampanaActiva()
+  if (can('beneficiarios', 'consultar')) {
+    cargarTotalBeneficiarios()
+    cargarTotalEntregas()
+  }
+  if (can('donantes', 'consultar')) {
+    cargarTotalDonantes()
+  }
+  if (can('donaciones', 'consultar')) {
+    cargarTotalDonaciones()
+  }
+  if (can('campanas', 'consultar')) {
+    cargarCampanaActiva()
+  }
 })
 
 const saludo = computed(() => {
@@ -180,7 +201,7 @@ const saludo = computed(() => {
       <!-- Indicadores -->
       <div class="stats-grid">
 
-        <div class="stat-card">
+        <div v-if="can('beneficiarios', 'consultar')" class="stat-card">
           <div class="stat-icon">♙</div>
           <div>
             <span>Beneficiarios</span>
@@ -189,7 +210,7 @@ const saludo = computed(() => {
           </div>
         </div>
 
-        <div class="stat-card">
+        <div v-if="can('donantes', 'consultar')" class="stat-card">
           <div class="stat-icon">♧</div>
           <div>
             <span>Donantes</span>
@@ -198,7 +219,7 @@ const saludo = computed(() => {
           </div>
         </div>
 
-        <div class="stat-card">
+        <div v-if="can('donaciones', 'consultar')" class="stat-card">
           <div class="stat-icon">◇</div>
           <div>
             <span>Donaciones</span>
@@ -207,7 +228,7 @@ const saludo = computed(() => {
           </div>
         </div>
 
-        <div class="stat-card">
+        <div v-if="can('beneficiarios', 'consultar')" class="stat-card">
           <div class="stat-icon">✓</div>
           <div>
             <span>Entregas</span>
@@ -221,7 +242,7 @@ const saludo = computed(() => {
       <!-- Resumen -->
       <div class="summary-grid">
 
-       <div class="summary-card">
+       <div v-if="can('beneficiarios', 'consultar')" class="summary-card">
   <div class="card-header">
     <div>
       <h2>Impacto generado</h2>
@@ -242,7 +263,7 @@ const saludo = computed(() => {
    <strong>75%</strong>
   </div>
 </div>
-	<div class="summary-card">
+	<div v-if="can('campanas', 'consultar') && can('donaciones', 'consultar')" class="summary-card">
   <div class="card-header">
     <div>
       <h2>Campaña activa</h2>
@@ -299,23 +320,39 @@ const saludo = computed(() => {
    <button
   class="quick-action"
   type="button"
+  v-if="can('beneficiarios', 'agregar')"
   @click="nuevoBeneficiario"
 >
   <span class="quick-action-icon">+</span>
   <span>Nuevo beneficiario</span>
 </button>
 
-    <button class="quick-action">
+    <button
+      v-if="can('donaciones', 'agregar')"
+      class="quick-action"
+      type="button"
+      @click="registrarDonacion"
+    >
       <span class="quick-action-icon">+</span>
       <span>Registrar donación</span>
     </button>
 
-    <button class="quick-action">
+    <button
+      v-if="can('beneficiarios', 'agregar')"
+      class="quick-action"
+      type="button"
+      @click="nuevaEntrega"
+    >
       <span class="quick-action-icon">+</span>
       <span>Nueva entrega</span>
     </button>
 
-    <button class="quick-action">
+    <button
+      v-if="can('campanas', 'agregar')"
+      class="quick-action"
+      type="button"
+      @click="nuevaCampana"
+    >
       <span class="quick-action-icon">+</span>
       <span>Nueva campaña</span>
     </button>

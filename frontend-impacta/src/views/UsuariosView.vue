@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import MainLayout from '../layouts/MainLayout.vue'
 import { apiFetch } from '../services/api'
+import { isAdministrator } from '../services/permissions'
 
 type RolUsuario = 'ADMINISTRADOR' | 'COORDINADOR' | 'VOLUNTARIO'
 
@@ -187,7 +188,7 @@ onMounted(cargarUsuarios)
           <p>Administra las cuentas y los permisos de acceso a Impacta.</p>
         </div>
 
-        <button class="primary-button" type="button" @click="abrirCrear">
+        <button v-if="isAdministrator()" class="primary-button" type="button" @click="abrirCrear">
           <span>+</span>
           Nuevo usuario
         </button>
@@ -245,14 +246,14 @@ onMounted(cargarUsuarios)
                 <th>Nombre</th>
                 <th>Correo</th>
                 <th>Rol</th>
-                <th class="actions-heading">Acciones</th>
+                <th v-if="isAdministrator()" class="actions-heading">Acciones</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="usuario in usuariosFiltrados" :key="usuario.id">
                 <td class="name-cell">{{ usuario.nombre }}</td>
                 <td>{{ usuario.email }}</td>
-                <td>
+                <td v-if="isAdministrator()">
                   <span class="role-badge" :class="`role-${usuario.rol.toLowerCase()}`">
                     {{ usuario.rol }}
                   </span>

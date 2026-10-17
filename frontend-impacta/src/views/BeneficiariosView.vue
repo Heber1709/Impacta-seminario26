@@ -4,6 +4,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import MainLayout from '../layouts/MainLayout.vue'
 import { apiFetch } from '../services/api'
+import { hasPermission as can } from '../services/permissions'
 
 const router = useRouter()
 
@@ -139,6 +140,7 @@ async function cargarCatalogos() {
         </div>
 
         <button
+          v-if="can('beneficiarios', 'agregar')"
           class="primary-button"
           type="button"
           @click="nuevoBeneficiario"
@@ -195,7 +197,7 @@ async function cargarCatalogos() {
         <th>Municipio</th>
         <th>Departamento</th>
         <th>Integrantes</th>
-        <th>Acciones</th>
+        <th v-if="can('beneficiarios', 'editar')">Acciones</th>
       </tr>
     </thead>
 
@@ -209,7 +211,7 @@ async function cargarCatalogos() {
         <td>{{ nombreMunicipio(beneficiario) }}</td>
         <td>{{ nombreDepartamento(beneficiario) }}</td>
         <td>{{ beneficiario.integrantes_hogar }}</td>
-        <td>
+        <td v-if="can('beneficiarios', 'editar')">
           <button
             class="edit-button"
             type="button"

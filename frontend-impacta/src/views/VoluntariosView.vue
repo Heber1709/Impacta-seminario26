@@ -2,6 +2,10 @@
 import { computed, onMounted, ref } from 'vue'
 import MainLayout from '../layouts/MainLayout.vue'
 import { apiFetch } from '../services/api'
+import {
+  hasPermission as can,
+  isAdministrator,
+} from '../services/permissions'
 
 interface Voluntario {
   id: string
@@ -302,6 +306,7 @@ onMounted(() => {
         </div>
 
         <button
+          v-if="can('voluntarios', 'agregar')"
           class="primary-button"
           type="button"
           :disabled="cargandoCatalogos"
@@ -370,7 +375,7 @@ onMounted(() => {
                 <th>Dirección</th>
                 <th>Municipio</th>
                 <th>Departamento</th>
-                <th class="actions-heading">Acciones</th>
+                <th v-if="can('voluntarios', 'editar') || isAdministrator()" class="actions-heading">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -383,9 +388,10 @@ onMounted(() => {
                 <td>{{ voluntario.direccion }}</td>
                 <td>{{ nombreMunicipio(voluntario) }}</td>
                 <td>{{ nombreDepartamento(voluntario) }}</td>
-                <td>
+                <td v-if="can('voluntarios', 'editar') || isAdministrator()">
                   <div class="row-actions">
                     <button
+                      v-if="can('voluntarios', 'editar')"
                       class="text-button"
                       type="button"
                       @click="abrirEdicion(voluntario)"
@@ -393,6 +399,7 @@ onMounted(() => {
                       Editar
                     </button>
                     <button
+                      v-if="isAdministrator()"
                       class="text-button danger-button"
                       type="button"
                       :disabled="voluntarioDesactivando === voluntario.id"

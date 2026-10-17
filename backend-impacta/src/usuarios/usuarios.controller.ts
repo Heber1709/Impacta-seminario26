@@ -19,6 +19,9 @@ import { UsuariosService } from './usuarios.service';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
 import { UpdatePerfilDto } from './dto/update-perfil.dto';
+import { UpdatePermisosDto } from './dto/update-permisos.dto';
+import { PermissionsGuard } from '../permissions/permissions.guard';
+import { RequirePermission } from '../permissions/require-permission.decorator';
 
 interface AuthenticatedRequest extends Request {
   user: {
@@ -57,7 +60,8 @@ export class UsuariosController {
   }
 
   @Get()
-  @UseGuards(AdminGuard)
+  @UseGuards(PermissionsGuard)
+  @RequirePermission({ section: 'usuarios', action: 'consultar' })
   findAll() {
     return this.usuariosService.findAll();
   }
@@ -75,6 +79,21 @@ export class UsuariosController {
     @Body() dto: UpdateUsuarioDto,
   ) {
     return this.usuariosService.update(id, dto);
+  }
+
+  @Get(':id/permisos')
+  @UseGuards(AdminGuard)
+  findPermissions(@Param('id') id: string) {
+    return this.usuariosService.findPermissions(id);
+  }
+
+  @Patch(':id/permisos')
+  @UseGuards(AdminGuard)
+  updatePermissions(
+    @Param('id') id: string,
+    @Body() dto: UpdatePermisosDto,
+  ) {
+    return this.usuariosService.updatePermissions(id, dto.permisos);
   }
 
   @Delete(':id')

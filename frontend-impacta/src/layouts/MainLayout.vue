@@ -20,42 +20,43 @@
         </RouterLink>
 
         <RouterLink
+          v-if="can('beneficiarios', 'consultar')"
           to="/beneficiarios" class="menu-item" exact-active-class="active" >
           <span>♙</span>
           <span>Beneficiarios</span>
         </RouterLink>
 
-        <RouterLink to="/voluntarios" class="menu-item" exact-active-class="active">
+        <RouterLink v-if="can('voluntarios', 'consultar')" to="/voluntarios" class="menu-item" exact-active-class="active">
           <span>♟</span>
           <span>Voluntarios</span>
         </RouterLink>
 
-        <RouterLink to="/departamentos" class="menu-item" exact-active-class="active">
+        <RouterLink v-if="can('departamentos', 'consultar')" to="/departamentos" class="menu-item" exact-active-class="active">
           <span>▤</span>
           <span>Departamentos</span>
         </RouterLink>
 
-        <RouterLink to="/municipios" class="menu-item" exact-active-class="active">
+        <RouterLink v-if="can('municipios', 'consultar')" to="/municipios" class="menu-item" exact-active-class="active">
           <span>⌖</span>
           <span>Municipios</span>
         </RouterLink>
 
-        <RouterLink to="/donantes" class="menu-item">
+        <RouterLink v-if="can('donantes', 'consultar')" to="/donantes" class="menu-item">
           <span>♧</span>
           <span>Donantes</span>
         </RouterLink>
 
-        <RouterLink to="/donaciones" class="menu-item">
+        <RouterLink v-if="can('donaciones', 'consultar')" to="/donaciones" class="menu-item">
           <span>♢</span>
           <span>Donaciones</span>
         </RouterLink>
 
-        <RouterLink to="/inventario" class="menu-item">
+        <RouterLink v-if="can('inventario', 'consultar')" to="/inventario" class="menu-item">
           <span>▣</span>
           <span>Inventario</span>
         </RouterLink>
 
-        <RouterLink to="/campanas" class="menu-item">
+        <RouterLink v-if="can('campanas', 'consultar')" to="/campanas" class="menu-item">
           <span>⊙</span>
           <span>Campañas</span>
         </RouterLink>
@@ -63,6 +64,11 @@
       </nav>
 
       <div class="sidebar-bottom">
+
+        <RouterLink v-if="isAdministrator()" to="/permisos" class="menu-item">
+          <span>▣</span>
+          <span>Permisos</span>
+        </RouterLink>
 
         <RouterLink to="/configuracion" class="menu-item">
           <span>⚙</span>
@@ -92,21 +98,10 @@
 <script setup lang="ts">
 //import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { hasPermission, isAdministrator } from '../services/permissions'
 
 const router = useRouter()
-/*const esAdministrador = computed(() => {
-  const usuarioGuardado = localStorage.getItem('usuario')
-  if (!usuarioGuardado) {
-    return false
-  }
-
-  try {
-    return JSON.parse(usuarioGuardado).rol === 'ADMINISTRADOR'
-  } catch (error) {
-    console.error('No se pudo leer el usuario guardado.', error)
-    return false
-  }
-})*/
+const can = hasPermission
 
 function cerrarSesion() {
   localStorage.removeItem('accessToken')

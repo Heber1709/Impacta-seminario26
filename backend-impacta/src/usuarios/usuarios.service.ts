@@ -4,6 +4,10 @@ import { Repository } from 'typeorm';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
 import { Usuario } from './entities/usuario.entity';
+import {
+  permissionSections,
+  UserPermissions,
+} from '../permissions/permissions.types';
 
 @Injectable()
 export class UsuariosService {
@@ -68,6 +72,60 @@ export class UsuariosService {
 
     Object.assign(usuario, updateUsuarioDto);
     return await this.usuarioRepository.save(usuario);
+  }
+
+  async findPermissions(id: string) {
+    const usuario = await this.findOne(id);
+    return { id: usuario.id, permisos: usuario.permisos ?? {} };
+  }
+
+  async updatePermissions(id: string, permisos: UserPermissions) {
+    const usuario = await this.findOne(id);
+    this.validatePermissions(permisos);
+    usuario.permisos = permisos;
+    await this.usuarioRepository.save(usuario);
+    return { id: usuario.id, permisos: usuario.permisos };
+  }
+
+  private validatePermissions(permisos: UserPermissions): void {
+    if (!permisos || typeof permisos !== 'object' || Array.isArray(permisos)) {
+      throw new BadRequestException('El formato de permisos no es válido.');
+    }
+
+    const validSections = new Set<string>(permissionSections);
+    for (const [section, actions] of Object.entries(permisos)) {
+      if (
+        !validSections.has(section) ||
+        !actions ||
+        typeof actions !== 'object' ||
+        Array.isArray(actions)
+      ) {
+        throw new BadRequestException('El formato de permisos no es válido.');
+      }
+
+      const allowedActions =
+        section === 'usuarios'
+          ? ['consultar']
+          : ['consultar', 'agregar', 'editar'];
+      if (
+        Object.entries(actions).some(
+          ([action, value]) =>
+            !allowedActions.includes(action) || typeof value !== 'boolean',
+        )
+      ) {
+        throw new BadRequestException('El formato de permisos no es válido.');
+      }
+
+      if (
+        section !== 'usuarios' &&
+        (actions.agregar || actions.editar) &&
+        actions.consultar !== true
+      ) {
+        throw new BadRequestException(
+          'Para agregar o editar en un mantenimiento también se debe permitir consultar.',
+        );
+      }
+    }
   }
 
   async remove(id: string) {
