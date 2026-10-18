@@ -53,6 +53,20 @@ const router = createRouter({
     },
 
     {
+      path: '/entregas',
+      name: 'entregas',
+      component: () => import('../views/EntregasView.vue'),
+      meta: { permission: { section: 'beneficiarios', action: 'consultar' } }
+    },
+
+    {
+      path: '/editar-entrega/:id',
+      name: 'editar-entrega',
+      component: () => import('../views/NuevaEntregaView.vue'),
+      meta: { permission: { section: 'beneficiarios', action: 'editar' } }
+    },
+
+    {
       path: '/editar-beneficiario/:id',
       name: 'editar-beneficiario',
       component: () => import('../views/NuevoBeneficiarioView.vue'),

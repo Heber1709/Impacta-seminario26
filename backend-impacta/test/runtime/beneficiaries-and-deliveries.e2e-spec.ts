@@ -17,6 +17,7 @@ describe('Beneficiary and delivery workflows', () => {
     const location = await existingLocation();
     let beneficiaryId: string | undefined;
     let deliveryId: string | undefined;
+    const volunteerIds: string[] = [];
     let completed = false;
 
     try {
@@ -62,6 +63,20 @@ describe('Beneficiary and delivery workflows', () => {
       );
       expect(user).toBeDefined();
 
+      for (const index of [1, 2]) {
+        const volunteer = await request(apiUrl)
+          .post('/voluntarios')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .send({
+            dpi: uniqueDpi(),
+            nombre_completo: `Voluntario QA ${index}`,
+            direccion: 'Dirección de pruebas',
+            ...location,
+          })
+          .expect(201);
+        volunteerIds.push(volunteer.body.id);
+      }
+
       const delivery = await request(apiUrl)
         .post('/entregas')
         .set('Authorization', `Bearer ${adminToken}`)
@@ -69,12 +84,62 @@ describe('Beneficiary and delivery workflows', () => {
           evidencia_url: `https://example.test/${uniqueValue('evidence')}`,
           beneficiario_id: beneficiaryId,
           usuario_id: user.id,
+          voluntarios_ids: volunteerIds,
         })
         .expect(201);
 
       deliveryId = delivery.body.id;
       expect(delivery.body.beneficiario.id).toBe(beneficiaryId);
       expect(delivery.body.usuario.id).toBe(user.id);
+      expect(
+        delivery.body.voluntarios.map(
+          (volunteer: { id: string }) => volunteer.id,
+        ),
+      ).toEqual(expect.arrayContaining(volunteerIds));
+
+      const listedDeliveries = await request(apiUrl)
+        .get('/entregas')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+      const listedDelivery = listedDeliveries.body.find(
+        (item: { id: string }) => item.id === deliveryId,
+      );
+      expect(listedDelivery).toBeDefined();
+      expect(listedDelivery.voluntarios).toEqual(
+        expect.arrayContaining(volunteerIds),
+      );
+
+      const persistedDelivery = await request(apiUrl)
+        .get(`/entregas/${deliveryId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+      expect(
+        persistedDelivery.body.voluntarios.map(
+          (volunteer: { id: string }) => volunteer.id,
+        ),
+      ).toEqual(expect.arrayContaining(volunteerIds));
+
+      const updatedDelivery = await request(apiUrl)
+        .patch(`/entregas/${deliveryId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ voluntarios_ids: [volunteerIds[1]] })
+        .expect(200);
+      expect(
+        updatedDelivery.body.voluntarios.map(
+          (volunteer: { id: string }) => volunteer.id,
+        ),
+      ).toEqual([volunteerIds[1]]);
+
+      const restoredDelivery = await request(apiUrl)
+        .patch(`/entregas/${deliveryId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ voluntarios_ids: volunteerIds })
+        .expect(200);
+      expect(
+        restoredDelivery.body.voluntarios.map(
+          (volunteer: { id: string }) => volunteer.id,
+        ),
+      ).toEqual(expect.arrayContaining(volunteerIds));
 
       const persisted = await request(apiUrl)
         .get(`/beneficiarios/${beneficiaryId}`)
@@ -92,16 +157,29 @@ describe('Beneficiary and delivery workflows', () => {
       expect(updated.body.integrantes_hogar).toBe(4);
       completed = true;
     } finally {
-      if (preserveQaData && completed && beneficiaryId && deliveryId) {
+      if (
+        preserveQaData &&
+        completed &&
+        beneficiaryId &&
+        deliveryId &&
+        volunteerIds.length === 2
+      ) {
         reportPreservedQaData('beneficiary-delivery', {
           beneficiaryId,
           deliveryId,
           dpi,
+          volunteerIds,
         });
       } else {
         if (deliveryId) {
           await request(apiUrl)
             .delete(`/entregas/${deliveryId}`)
+            .set('Authorization', `Bearer ${adminToken}`)
+            .expect(200);
+        }
+        for (const volunteerId of volunteerIds) {
+          await request(apiUrl)
+            .delete(`/voluntarios/${volunteerId}`)
             .set('Authorization', `Bearer ${adminToken}`)
             .expect(200);
         }

@@ -1,7 +1,17 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  JoinTable,
+  ManyToMany,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { Beneficiario } from '../../beneficiarios/entities/beneficiario.entity';
 import { Usuario } from '../../usuarios/entities/usuario.entity';
 import { Campana } from '../../campanas/entities/campana.entity';
+import { Voluntario } from '../../voluntarios/entities/voluntario.entity';
 
 @Entity('entregas')
 export class Entrega {
@@ -31,4 +41,12 @@ export class Entrega {
   @ManyToOne(() => Campana, { eager: true, nullable: true })
   @JoinColumn({ name: 'campana_id' })
   campana?: Campana;
+
+  @ManyToMany(() => Voluntario)
+  @JoinTable({
+    name: 'entrega_voluntarios',
+    joinColumn: { name: 'entrega_id', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'voluntario_id', referencedColumnName: 'id' },
+  })
+  voluntarios: Voluntario[];
 }
