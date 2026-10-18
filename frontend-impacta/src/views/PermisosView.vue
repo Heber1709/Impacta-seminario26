@@ -29,6 +29,7 @@ const rows: PermissionRow[] = [
   { key: 'donantes', label: 'Donantes' },
   { key: 'donaciones', label: 'Donaciones' },
   { key: 'inventario', label: 'Inventario' },
+  { key: 'tipos_movimiento', label: 'Tipos de movimiento' },
   { key: 'campanas', label: 'Campañas' },
   { key: 'usuarios', label: 'Usuarios', usersReadOnly: true },
 ]

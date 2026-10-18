@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Generated,
   JoinColumn,
   JoinTable,
   ManyToMany,
@@ -17,6 +18,10 @@ import { Voluntario } from '../../voluntarios/entities/voluntario.entity';
 export class Entrega {
   @PrimaryGeneratedColumn('uuid')
   id: string;
+
+  @Column({ type: 'integer', unique: true })
+  @Generated('increment')
+  numero_entrega: number;
 
   @CreateDateColumn()
   fecha: Date;

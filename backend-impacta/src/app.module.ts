@@ -13,6 +13,7 @@ import { EntregasModule } from './entregas/entregas.module';
 import { AuthModule } from './auth/auth.module';
 import { VoluntariosModule } from './voluntarios/voluntarios.module';
 import { CatalogosModule } from './catalogos/catalogos.module';
+import { TiposMovimientoModule } from './tipos-movimiento/tipos-movimiento.module';
 
 @Module({
   imports: [
@@ -51,6 +52,8 @@ import { CatalogosModule } from './catalogos/catalogos.module';
     VoluntariosModule,
 
     CatalogosModule,
+
+    TiposMovimientoModule,
 
   ],
   controllers: [AppController],

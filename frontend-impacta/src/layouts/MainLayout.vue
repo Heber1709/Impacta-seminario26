@@ -26,24 +26,14 @@
           <span>Beneficiarios</span>
         </RouterLink>
 
-        <RouterLink v-if="can('beneficiarios', 'consultar')" to="/entregas" class="menu-item" exact-active-class="active">
-          <span>↗</span>
-          <span>Entregas</span>
-        </RouterLink>
-
         <RouterLink v-if="can('voluntarios', 'consultar')" to="/voluntarios" class="menu-item" exact-active-class="active">
           <span>♟</span>
           <span>Voluntarios</span>
         </RouterLink>
 
-        <RouterLink v-if="can('departamentos', 'consultar')" to="/departamentos" class="menu-item" exact-active-class="active">
-          <span>▤</span>
-          <span>Departamentos</span>
-        </RouterLink>
-
-        <RouterLink v-if="can('municipios', 'consultar')" to="/municipios" class="menu-item" exact-active-class="active">
-          <span>⌖</span>
-          <span>Municipios</span>
+        <RouterLink v-if="can('campanas', 'consultar')" to="/campanas" class="menu-item">
+          <span>⊙</span>
+          <span>Campañas</span>
         </RouterLink>
 
         <RouterLink v-if="can('donantes', 'consultar')" to="/donantes" class="menu-item">
@@ -56,28 +46,48 @@
           <span>Donaciones</span>
         </RouterLink>
 
+        <RouterLink v-if="can('beneficiarios', 'consultar')" to="/entregas" class="menu-item" exact-active-class="active">
+          <span>↗</span>
+          <span>Entregas</span>
+        </RouterLink>
+
         <RouterLink v-if="can('inventario', 'consultar')" to="/inventario" class="menu-item">
           <span>▣</span>
           <span>Inventario</span>
         </RouterLink>
-
-        <RouterLink v-if="can('campanas', 'consultar')" to="/campanas" class="menu-item">
-          <span>⊙</span>
-          <span>Campañas</span>
-        </RouterLink>
-
+     
       </nav>
 
       <div class="sidebar-bottom">
 
-        <RouterLink v-if="isAdministrator()" to="/permisos" class="menu-item">
-          <span>▣</span>
-          <span>Permisos</span>
+        <RouterLink
+          v-if="can('tipos_movimiento', 'consultar')"
+          to="/tipos-movimiento"
+          class="menu-item"
+          exact-active-class="active"
+        >
+          <span>⇄</span>
+          <span>Tipos de movimiento</span>
+        </RouterLink>
+        
+        <RouterLink v-if="can('departamentos', 'consultar')" to="/departamentos" class="menu-item" exact-active-class="active">
+          <span>▤</span>
+          <span>Departamentos</span>
+        </RouterLink>
+
+        <RouterLink v-if="can('municipios', 'consultar')" to="/municipios" class="menu-item" exact-active-class="active">
+          <span>⌖</span>
+          <span>Municipios</span>
         </RouterLink>
 
         <RouterLink to="/configuracion" class="menu-item">
           <span>⚙</span>
-          <span>Configuración</span>
+          <span>Usuarios</span>
+        </RouterLink>
+
+        <RouterLink v-if="isAdministrator()" to="/permisos" class="menu-item">
+          <span>▣</span>
+          <span>Permisos</span>
         </RouterLink>
 
         <a

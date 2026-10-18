@@ -6,6 +6,7 @@ export const permissionSections = [
   'donantes',
   'donaciones',
   'inventario',
+  'tipos_movimiento',
   'campanas',
   'usuarios',
 ] as const;
