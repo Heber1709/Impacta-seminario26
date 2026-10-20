@@ -293,10 +293,10 @@ async function guardarEntrega() {
       )
     }
 
-    mensaje.value = editando
-      ? 'Entrega actualizada correctamente.'
-      : 'Entrega registrada correctamente.'
-    window.setTimeout(volver, 800)
+    mensaje.value = `Entrega #${data.numero_entrega} ${
+      editando ? 'actualizada' : 'registrada'
+    } correctamente.`
+    window.setTimeout(volver, 2000)
   } catch (cause) {
     console.error('Error al registrar la entrega:', cause)
     error.value =

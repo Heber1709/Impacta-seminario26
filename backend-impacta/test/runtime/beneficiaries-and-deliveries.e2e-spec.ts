@@ -89,6 +89,8 @@ describe('Beneficiary and delivery workflows', () => {
         .expect(201);
 
       deliveryId = delivery.body.id;
+      expect(delivery.body.numero_entrega).toEqual(expect.any(Number));
+      expect(delivery.body.numero_entrega).toBeGreaterThan(0);
       expect(delivery.body.beneficiario.id).toBe(beneficiaryId);
       expect(delivery.body.usuario.id).toBe(user.id);
       expect(
@@ -105,6 +107,7 @@ describe('Beneficiary and delivery workflows', () => {
         (item: { id: string }) => item.id === deliveryId,
       );
       expect(listedDelivery).toBeDefined();
+      expect(listedDelivery.numero_entrega).toBe(delivery.body.numero_entrega);
       expect(listedDelivery.voluntarios).toEqual(
         expect.arrayContaining(volunteerIds),
       );
@@ -113,6 +116,9 @@ describe('Beneficiary and delivery workflows', () => {
         .get(`/entregas/${deliveryId}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
+      expect(persistedDelivery.body.numero_entrega).toBe(
+        delivery.body.numero_entrega,
+      );
       expect(
         persistedDelivery.body.voluntarios.map(
           (volunteer: { id: string }) => volunteer.id,

@@ -130,6 +130,22 @@ const router = createRouter({
     },
 
     {
+      path: '/tipos-movimiento',
+      name: 'tipos-movimiento',
+      component: () => import('../views/TiposMovimientoView.vue'),
+      meta: {
+        permission: { section: 'tipos_movimiento', action: 'consultar' }
+      }
+    },
+
+    {
+      path: '/inventario/:id',
+      name: 'detalle-inventario',
+      component: () => import('../views/NuevoInventarioView.vue'),
+      meta: { permission: { section: 'inventario', action: 'consultar' } }
+    },
+
+    {
        path: '/nuevo-inventario',
        name: 'nuevo-inventario',  
        component: () => import('../views/NuevoInventarioView.vue'),

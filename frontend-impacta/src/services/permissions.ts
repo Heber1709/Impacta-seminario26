@@ -8,6 +8,7 @@ export type PermissionSection =
   | 'donantes'
   | 'donaciones'
   | 'inventario'
+  | 'tipos_movimiento'
   | 'campanas'
   | 'usuarios'
 

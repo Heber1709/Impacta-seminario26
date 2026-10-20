@@ -55,6 +55,7 @@
           <table>
             <thead>
               <tr>
+                <th>Número</th>
                 <th>Fecha</th>
                 <th>Beneficiario</th>
                 <th>Campaña</th>
@@ -65,6 +66,7 @@
             </thead>
             <tbody>
               <tr v-for="entrega in entregasFiltradas" :key="entrega.id">
+                <td>#{{ entrega.numero_entrega }}</td>
                 <td>{{ formatearFecha(entrega.fecha) }}</td>
                 <td class="primary-cell">
                   {{ entrega.beneficiario?.nombre_completo || '—' }}
@@ -128,6 +130,7 @@ import {
 
 interface Entrega {
   id: string
+  numero_entrega: number
   fecha: string
   evidencia_url?: string | null
   beneficiario?: { id: string; nombre_completo: string } | null
@@ -168,6 +171,7 @@ const entregasFiltradas = computed(() => {
 
   return entregas.value.filter((entrega) => {
     const valores = [
+      String(entrega.numero_entrega),
       entrega.beneficiario?.nombre_completo,
       entrega.campana?.nombre,
       ...nombresVoluntarios(entrega),

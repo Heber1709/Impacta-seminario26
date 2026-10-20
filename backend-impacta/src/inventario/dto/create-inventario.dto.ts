@@ -1,10 +1,10 @@
-import { IsDateString, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Min } from 'class-validator';
-import { TipoMovimiento } from '../entities/inventario.entity';
+import { IsDateString, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, MaxLength, Min } from 'class-validator';
 
 export class CreateInventarioDto {
-  @IsEnum(TipoMovimiento, { message: 'El movimiento debe ser ENTRADA o SALIDA' })
+  @IsString()
   @IsNotEmpty()
-  tipo_movimiento: TipoMovimiento;
+  @MaxLength(30)
+  tipo_movimiento: string;
 
   @IsInt()
   @Min(1, { message: 'La cantidad debe ser al menos 1' })
@@ -21,4 +21,8 @@ export class CreateInventarioDto {
   @IsUUID()
   @IsNotEmpty()
   donacion_id: string; // UUID de la tabla donaciones
+
+  @IsInt()
+  @Min(1, { message: 'El número de entrega debe ser al menos 1' })
+  numero_entrega: number;
 }

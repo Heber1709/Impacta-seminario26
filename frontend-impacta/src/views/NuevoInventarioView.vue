@@ -5,13 +5,19 @@
       <div class="page-header">
         <div>
           <span class="eyebrow">CONTROL DE EXISTENCIAS</span>
-          <h1>Nuevo movimiento</h1>
-          <p>Registra una entrada o salida del inventario.</p>
+          <h1>{{ viendoDetalle ? 'Detalle del movimiento' : 'Nuevo movimiento' }}</h1>
+          <p>
+            {{
+              viendoDetalle
+                ? 'Consulta todos los datos del movimiento de inventario.'
+                : 'Registra una entrada o salida del inventario.'
+            }}
+          </p>
         </div>
 
         <div class="header-actions">
           <button class="btn-secondary" type="button" @click="volver">
-            Cancelar
+            {{ viendoDetalle ? 'Volver al inventario' : 'Cancelar' }}
           </button>
         </div>
       </div>
@@ -20,7 +26,13 @@
 
         <div class="form-section">
           <h2>Información del movimiento</h2>
-          <p>Completa los datos necesarios para registrar el movimiento.</p>
+          <p>
+            {{
+              viendoDetalle
+                ? 'Datos registrados para este movimiento.'
+                : 'Completa los datos necesarios para registrar el movimiento.'
+            }}
+          </p>
         </div>
 
         <div class="form-grid">
@@ -31,10 +43,16 @@
             <select
               id="tipo_movimiento"
               v-model="formulario.tipo_movimiento"
+              :disabled="viendoDetalle"
             >
               <option value="">Selecciona una opción</option>
-              <option value="ENTRADA">Entrada</option>
-              <option value="SALIDA">Salida</option>
+              <option
+                v-for="tipo in tiposMovimiento"
+                :key="tipo.codigo"
+                :value="tipo.codigo"
+              >
+                {{ tipo.descripcion }} ({{ tipo.signo }})
+              </option>
             </select>
           </div>
 
@@ -47,13 +65,46 @@
               type="number"
               min="1"
               placeholder="Ej. 10"
+              :disabled="viendoDetalle"
+            />
+          </div>
+
+          <div v-if="viendoDetalle" class="form-group">
+            <label for="numero_entrega">Número de entrega</label>
+            <input
+              id="numero_entrega"
+              :value="movimientoDetalle?.entrega?.numero_entrega ?? 'Sin entrega asociada'"
+              type="text"
+              disabled
+            />
+          </div>
+
+          <div v-if="!viendoDetalle" class="form-group">
+            <label for="numero_entrega">Número de entrega</label>
+
+            <input
+              id="numero_entrega"
+              v-model.number="formulario.numero_entrega"
+              type="number"
+              min="1"
+              step="1"
+              required
+              placeholder="Ej. 1"
             />
           </div>
 
           <div class="form-group">
             <label for="donacion_id">Donación relacionada</label>
 
+            <input
+              v-if="viendoDetalle"
+              id="donacion_id"
+              :value="etiquetaDonacion"
+              type="text"
+              disabled
+            />
             <select
+              v-else
               id="donacion_id"
               v-model="formulario.donacion_id"
             >
@@ -80,6 +131,17 @@
               id="fecha_vencimiento"
               v-model="formulario.fecha_vencimiento"
               type="date"
+              :disabled="viendoDetalle"
+            />
+          </div>
+
+          <div v-if="viendoDetalle" class="form-group">
+            <label for="fecha_movimiento">Fecha del movimiento</label>
+            <input
+              id="fecha_movimiento"
+              :value="formatearFecha(movimientoDetalle?.fecha_movimiento)"
+              type="text"
+              disabled
             />
           </div>
 
@@ -94,16 +156,28 @@
               v-model="formulario.observaciones"
               rows="5"
               placeholder="Agrega alguna observación sobre este movimiento..."
+              :disabled="viendoDetalle"
             ></textarea>
           </div>
 
         </div>
 
+        <p v-if="viendoDetalle && movimientoDetalle" class="form-message">
+          Identificador del movimiento: {{ movimientoDetalle.id }}
+          <span v-if="movimientoDetalle.donacion">
+            · Donación: {{ movimientoDetalle.donacion.id }}
+          </span>
+          <span v-if="movimientoDetalle.entrega">
+            · Entrega: {{ movimientoDetalle.entrega.id }}
+          </span>
+          · Estado: {{ movimientoDetalle.estado ? 'Activo' : 'Inactivo' }}
+        </p>
+
         <div v-if="errorMessage" class="error-message">
           {{ errorMessage }}
         </div>
 
-        <div class="form-actions">
+        <div v-if="!viendoDetalle" class="form-actions">
           <button
             class="btn-secondary"
             type="button"
@@ -129,11 +203,15 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import MainLayout from '../layouts/MainLayout.vue'
 import { apiFetch } from '../services/api'
 
 const router = useRouter()
+const route = useRoute()
+const movimientoId =
+  typeof route.params.id === 'string' ? route.params.id : ''
+const viendoDetalle = Boolean(movimientoId)
 
 interface Donacion {
   id: string
@@ -141,11 +219,38 @@ interface Donacion {
   categoria: string
 }
 
+interface CatalogoTipoMovimiento {
+  codigo: string
+  descripcion: string
+  signo: '+' | '-'
+}
+
+interface MovimientoDetalle {
+  id: string
+  tipo_movimiento: string
+  cantidad: number
+  numero_entrega?: number | null
+  fecha_vencimiento?: string | null
+  fecha_movimiento: string
+  estado: boolean
+  observaciones?: string | null
+  entrega?: { id: string; numero_entrega: number } | null
+  donacion?: {
+    id: string
+    codigo_unico: string
+    categoria: string
+  } | null
+}
+
 const donaciones = ref<Donacion[]>([])
+const tiposMovimiento = ref<CatalogoTipoMovimiento[]>([])
+const movimientoDetalle = ref<MovimientoDetalle | null>(null)
+const etiquetaDonacion = ref('')
 
 const formulario = ref({
   tipo_movimiento: '',
   cantidad: null as number | null,
+  numero_entrega: null as number | null,
   fecha_vencimiento: '',
   observaciones: '',
   donacion_id: ''
@@ -153,21 +258,65 @@ const formulario = ref({
 
 const errorMessage = ref('')
 
+async function cargarDetalle() {
+  try {
+    const [response, tiposResponse] = await Promise.all([
+      apiFetch(`/inventario/${encodeURIComponent(movimientoId)}`),
+      apiFetch('/tipos-movimiento'),
+    ])
+    const [data, tiposData] = await Promise.all([
+      response.json(),
+      tiposResponse.json(),
+    ])
+
+    if (!response.ok || !tiposResponse.ok) {
+      throw new Error(
+        data.message ||
+          tiposData.message ||
+          'No fue posible cargar los datos del movimiento.'
+      )
+    }
+
+    tiposMovimiento.value = tiposData as CatalogoTipoMovimiento[]
+    movimientoDetalle.value = data as MovimientoDetalle
+    formulario.value.tipo_movimiento = data.tipo_movimiento
+    formulario.value.cantidad = data.cantidad
+    formulario.value.numero_entrega = data.entrega?.numero_entrega ?? null
+    formulario.value.fecha_vencimiento = data.fecha_vencimiento ?? ''
+    formulario.value.observaciones = data.observaciones ?? ''
+    etiquetaDonacion.value = data.donacion
+      ? `${data.donacion.codigo_unico} - ${data.donacion.categoria}`
+      : 'Sin donación asociada'
+  } catch (error) {
+    console.error('Error al cargar el detalle del movimiento:', error)
+    errorMessage.value =
+      error instanceof Error
+        ? error.message
+        : 'No fue posible cargar el movimiento.'
+  }
+}
+
 async function cargarDonaciones() {
   try {
-    const response = await apiFetch('/donaciones')
+    const [response, tiposResponse] = await Promise.all([
+      apiFetch('/donaciones'),
+      apiFetch('/tipos-movimiento'),
+    ])
+    const [data, tiposData] = await Promise.all([
+      response.json(),
+      tiposResponse.json(),
+    ])
 
-    const data = await response.json()
-
-    if (!response.ok) {
+    if (!response.ok || !tiposResponse.ok) {
       throw new Error(
-        Array.isArray(data.message)
-          ? data.message.join(', ')
-          : data.message || 'No fue posible cargar las donaciones.'
+        data.message ||
+          tiposData.message ||
+          'No fue posible cargar las donaciones y tipos de movimiento.'
       )
     }
 
     donaciones.value = data
+    tiposMovimiento.value = tiposData as CatalogoTipoMovimiento[]
   } catch (error) {
     console.error(error)
 
@@ -197,11 +346,21 @@ async function guardarMovimiento() {
       return
     }
 
+    if (
+      !Number.isInteger(formulario.value.numero_entrega) ||
+      formulario.value.numero_entrega === null ||
+      formulario.value.numero_entrega < 1
+    ) {
+      errorMessage.value = 'Ingresa un número de entrega válido.'
+      return
+    }
+
     const response = await apiFetch('/inventario', {
       method: 'POST',
       body: JSON.stringify({
         tipo_movimiento: formulario.value.tipo_movimiento,
         cantidad: formulario.value.cantidad,
+        numero_entrega: formulario.value.numero_entrega,
         fecha_vencimiento:
           formulario.value.fecha_vencimiento || undefined,
         observaciones:
@@ -237,8 +396,25 @@ function volver() {
   router.push('/inventario')
 }
 
+function formatearFecha(fecha?: string | null) {
+  if (!fecha) return '—'
+
+  const fechaLocal = new Date(fecha)
+  if (Number.isNaN(fechaLocal.getTime())) return '—'
+
+  return fechaLocal.toLocaleDateString('es-GT', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  })
+}
+
 onMounted(() => {
-  cargarDonaciones()
+  if (viendoDetalle) {
+    cargarDetalle()
+  } else {
+    cargarDonaciones()
+  }
 })
 </script>
 

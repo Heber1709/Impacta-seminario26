@@ -78,12 +78,14 @@
           <table>
             <thead>
               <tr>
-                <th>Movimiento</th>
+                <th>Tipo</th>
+                <th>Entrega</th>
                 <th>Donación</th>
                 <th>Categoría</th>
                 <th>Cantidad</th>
                 <th>Vencimiento</th>
                 <th>Fecha</th>
+                <th>Acciones</th>
               </tr>
             </thead>
 
@@ -95,10 +97,22 @@
                 <td>
                   <span
                     class="movement-badge"
-                    :class="movimiento.tipo_movimiento.toLowerCase()"
+                    :class="
+                      signoTipo(movimiento.tipo_movimiento) === '+'
+                        ? 'entrada'
+                        : 'salida'
+                    "
                   >
-                    {{ movimiento.tipo_movimiento }}
+                    {{ descripcionTipo(movimiento.tipo_movimiento) }}
                   </span>
+                </td>
+
+                <td>
+                  {{
+                    movimiento.entrega?.numero_entrega
+                      ? `#${movimiento.entrega.numero_entrega}`
+                      : '—'
+                  }}
                 </td>
 
                 <td>
@@ -119,6 +133,17 @@
 
                 <td>
                   {{ formatearFecha(movimiento.fecha_movimiento) }}
+                </td>
+                <td>
+                  <RouterLink
+                    class="detail-link"
+                    :to="{
+                      name: 'detalle-inventario',
+                      params: { id: movimiento.id }
+                    }"
+                  >
+                    Ver detalle
+                  </RouterLink>
                 </td>
               </tr>
             </tbody>
@@ -179,10 +204,17 @@ interface Donacion {
   categoria: string
 }
 
+interface TipoMovimiento {
+  codigo: string
+  descripcion: string
+  signo: '+' | '-'
+}
+
 interface Movimiento {
   id: string
-  tipo_movimiento: 'ENTRADA' | 'SALIDA'
+  tipo_movimiento: string
   cantidad: number
+  entrega?: { numero_entrega: number } | null
   fecha_vencimiento?: string | null
   fecha_movimiento: string
   observaciones?: string | null
@@ -190,29 +222,30 @@ interface Movimiento {
 }
 
 const movimientos = ref<Movimiento[]>([])
+const tiposMovimiento = ref<TipoMovimiento[]>([])
 const busqueda = ref('')
 const loading = ref(true)
 const errorMessage = ref('')
 
 const totalEntradas = computed(() => {
   return movimientos.value
-    .filter(movimiento => movimiento.tipo_movimiento === 'ENTRADA')
+    .filter(movimiento => signoTipo(movimiento.tipo_movimiento) === '+')
     .reduce((total, movimiento) => total + movimiento.cantidad, 0)
 })
 
 const totalSalidas = computed(() => {
   return movimientos.value
-    .filter(movimiento => movimiento.tipo_movimiento === 'SALIDA')
+    .filter(movimiento => signoTipo(movimiento.tipo_movimiento) === '-')
     .reduce((total, movimiento) => total + movimiento.cantidad, 0)
 })
 
 const existenciasActuales = computed(() => {
   return movimientos.value.reduce((total, movimiento) => {
-    if (movimiento.tipo_movimiento === 'ENTRADA') {
-      return total + movimiento.cantidad
-    }
-
-    return total - movimiento.cantidad
+    return (
+      total +
+      movimiento.cantidad *
+        (signoTipo(movimiento.tipo_movimiento) === '+' ? 1 : -1)
+    )
   }, 0)
 })
 
@@ -227,11 +260,15 @@ const movimientosFiltrados = computed(() => {
     const codigo = movimiento.donacion?.codigo_unico || ''
     const categoria = movimiento.donacion?.categoria || ''
     const tipo = movimiento.tipo_movimiento || ''
+    const descripcion = descripcionTipo(movimiento.tipo_movimiento)
+    const numeroEntrega = String(movimiento.entrega?.numero_entrega ?? '')
 
     return (
       codigo.toLowerCase().includes(texto) ||
       categoria.toLowerCase().includes(texto) ||
-      tipo.toLowerCase().includes(texto)
+      tipo.toLowerCase().includes(texto) ||
+      descripcion.toLowerCase().includes(texto) ||
+      numeroEntrega.includes(texto)
     )
   })
 })
@@ -241,19 +278,25 @@ async function cargarMovimientos() {
     loading.value = true
     errorMessage.value = ''
 
-    const response = await apiFetch('/inventario')
+    const [response, tiposResponse] = await Promise.all([
+      apiFetch('/inventario'),
+      apiFetch('/tipos-movimiento'),
+    ])
+    const [data, tiposData] = await Promise.all([
+      response.json(),
+      tiposResponse.json(),
+    ])
 
-    const data = await response.json()
-
-    if (!response.ok) {
+    if (!response.ok || !tiposResponse.ok) {
       throw new Error(
-        Array.isArray(data.message)
-          ? data.message.join(', ')
-          : data.message || 'No fue posible cargar el inventario.'
+        data.message ||
+          tiposData.message ||
+          'No fue posible cargar el inventario.'
       )
     }
 
     movimientos.value = data
+    tiposMovimiento.value = tiposData as TipoMovimiento[]
   } catch (error) {
     console.error(error)
 
@@ -268,6 +311,20 @@ async function cargarMovimientos() {
 
 function nuevoMovimiento() {
   router.push('/nuevo-inventario')
+}
+
+function descripcionTipo(codigo: string): string {
+  return (
+    tiposMovimiento.value.find((tipo) => tipo.codigo === codigo)?.descripcion ??
+    codigo
+  )
+}
+
+function signoTipo(codigo: string): '+' | '-' {
+  return (
+    tiposMovimiento.value.find((tipo) => tipo.codigo === codigo)?.signo ??
+    (codigo === 'ENTRADA' ? '+' : '-')
+  )
 }
 
 function formatearFecha(fecha?: string | null) {
@@ -337,6 +394,16 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.detail-link {
+  color: #26734d;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.detail-link:hover {
+  text-decoration: underline;
 }
 
 .btn-primary {

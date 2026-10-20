@@ -1,7 +1,8 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn } from 'typeorm';
 import { Donacion } from '../../donaciones/entities/donaciones.entity';
+import { Entrega } from '../../entregas/entities/entregas.entity';
 
-export enum TipoMovimiento {
+export enum TipoMovimientoInventarioLegacy {
   ENTRADA = 'ENTRADA',
   SALIDA = 'SALIDA',
 }
@@ -11,8 +12,11 @@ export class Inventario {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'enum', enum: TipoMovimiento })
-  tipo_movimiento: TipoMovimiento;
+  @Column({ type: 'enum', enum: TipoMovimientoInventarioLegacy })
+  tipo_movimiento: TipoMovimientoInventarioLegacy;
+
+  @Column({ type: 'varchar', length: 30, nullable: true })
+  tipo_movimiento_codigo?: string | null;
 
   @Column({ type: 'int' })
   cantidad: number;
@@ -32,4 +36,8 @@ export class Inventario {
   @ManyToOne(() => Donacion, { eager: true })
   @JoinColumn({ name: 'donacion_id' })
   donacion: Donacion;
+
+  @ManyToOne(() => Entrega, { eager: true, nullable: true })
+  @JoinColumn({ name: 'entrega_id' })
+  entrega?: Entrega | null;
 }
