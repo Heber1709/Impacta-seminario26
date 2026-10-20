@@ -1,0 +1,191 @@
+@startuml diagrama_clases
+' Forzar orientación de izquierda a derecha (Landscape)
+left to right direction
+
+skinparam class {
+  BackgroundColor<<Entidad>> LightBlue
+  BackgroundColor<<Controlador>> LightGreen
+  BorderColor DarkSlateGray
+  ArrowColor Charcoal
+}
+
+title Diagrama de Mantenimientos (CRUD) - Vista Horizontal Landscape
+
+' --- CAPA CENTRAL DE CONTROLADORES ---
+class MantenimientoBase<T> <<Controlador>> {
+  + agregar(entidad: T): boolean
+  + editar(id: any, entidad: T): boolean
+  + consultarPorId(id: any): T
+  + consultarTodos(): List<T>
+  + deshabilitar(id: any): boolean
+}
+
+' =========================================================
+' BLOQUE 1: Actores y Usuarios (Personal)
+' =========================================================
+package "Gestión de Personal" {
+  class Usuario <<Entidad>> {
+    + id: uuid
+    + email: character varying(255)
+    + nombre: character varying(150)
+    + rol: usuarios_rol_enum
+    + estado: boolean
+    + permisos: jsonb
+  }
+
+  class Voluntario <<Entidad>> {
+    + id: uuid
+    + dpi: character varying(13)
+    + nombre_completo: character varying(200)
+    + direccion: character varying(255)
+    + estado: boolean
+    + codigo_departamento: character varying(20)
+    + codigo_municipio: character varying(20)
+  }
+  
+  Usuario -down[hidden]-> Voluntario
+}
+
+' =========================================================
+' BLOQUE 2: Actores Externos y Campañas
+' =========================================================
+package "Logística y Campañas" {
+  class Donante <<Entidad>> {
+    + id: uuid
+    + nombre: character varying(200)
+    + tipo: donantes_tipo_enum
+    + email: character varying(150)
+    + telefono: character varying(20)
+    + estado: boolean
+  }
+
+  class Beneficiario <<Entidad>> {
+    + id: uuid
+    + dpi: character varying(13)
+    + nombre_completo: character varying(200)
+    + direccion: character varying(255)
+    + integrantes_hogar: integer
+    + estado: boolean
+    + codigo_departamento: character varying(20)
+    + codigo_municipio: character varying(20)
+  }
+
+  class Campana <<Entidad>> {
+    + id: uuid
+    + nombre: character varying(200)
+    + objetivo: text
+    + fecha_inicio: date
+    + fecha_fin: date
+    + meta_economica: numeric(10,2)
+    + meta_productos: integer
+    + fecha_creacion: timestamp
+    + estado: boolean
+  }
+  
+  Donante -down[hidden]-> Beneficiario
+  Beneficiario -down[hidden]-> Campana
+}
+
+' =========================================================
+' BLOQUE 3: Inventario y Transacciones
+' =========================================================
+package "Flujo de Inventario" {
+  class Donacion <<Entidad>> {
+    + id: uuid
+    + codigo_unico: character varying(50)
+    + tipo: donaciones_tipo_enum
+    + categoria: donaciones_categoria_enum
+    + monto: numeric(10,2)
+    + donante_id: uuid
+    + fotografia_url: character varying(255)
+    + fecha_ingreso: timestamp
+    + estado: boolean
+  }
+
+  class Inventario <<Entidad>> {
+    + id: uuid
+    + tipo_movimiento: movement_type
+    + cantidad: integer
+    + fecha_vencimiento: date
+    + donacion_id: uuid
+  }
+
+  class InventarioKardex <<Entidad>> {
+    + id: uuid
+    + tipo_movimiento: inventario_kardex_tipo_movimiento_enum
+    + cantidad: integer
+    + fecha_vencimiento: date
+    + fecha_movimiento: timestamp
+    + observaciones: character varying(255)
+    + estado: boolean
+    + donacion_id: uuid
+    + entrega_id: uuid
+    + tipo_movimiento_codigo: character varying(30)
+  }
+  
+  Donacion -down[hidden]-> Inventario
+  Inventario -down[hidden]-> InventarioKardex
+}
+
+' =========================================================
+' BLOQUE 4: Entregas y Distribución
+' =========================================================
+package "Operación Entregas" {
+  class Entrega <<Entidad>> {
+    + id: uuid
+    + beneficiario_id: uuid
+    + usuario_id: uuid
+    + fecha: timestamp
+    + evidencia_url: character varying(255)
+    + estado: boolean
+    + campana_id: uuid
+    + firma_digital: text
+    + numero_entrega: integer
+  }
+
+  class EntregaVoluntario <<Entidad>> {
+    + entrega_id: uuid
+    + voluntario_id: uuid
+  }
+  
+  Entrega -down[hidden]-> EntregaVoluntario
+}
+
+' =========================================================
+' BLOQUE 5: Catálogos Generales
+' =========================================================
+package "Catálogos Base" {
+  class TipoMovimiento <<Entidad>> {
+    + codigo: character varying(30)
+    + descripcion: character varying(100)
+    + signo: character(1)
+    + estado: boolean
+  }
+
+  class Departamento <<Entidad>> {
+    + codigo_departamento: character varying(20)
+    + descripcion: character varying(100)
+  }
+
+  class Municipio <<Entidad>> {
+    + codigo_municipio: character varying(20)
+    + codigo_departamento: character varying(20)
+    + descripcion: character varying(100)
+  }
+  
+  TipoMovimiento -down[hidden]-> Departamento
+  Departamento -down[hidden]-> Municipio
+}
+
+' --- RELACIONES ESTRUCTURADAS DE IZQUIERDA A DERECHA ---
+MantenimientoBase -right..> "Gestión de Personal" : "gestiona"
+"Gestión de Personal" -right[hidden]-> "Logística y Campañas"
+MantenimientoBase -right..> "Logística y Campañas" : "gestiona"
+"Logística y Campañas" -right[hidden]-> "Flujo de Inventario"
+MantenimientoBase -right..> "Flujo de Inventario" : "gestiona"
+"Flujo de Inventario" -right[hidden]-> "Operación Entregas"
+MantenimientoBase -right..> "Operación Entregas" : "gestiona"
+"Operación Entregas" -right[hidden]-> "Catálogos Base"
+MantenimientoBase -right..> "Catálogos Base" : "gestiona"
+
+@enduml

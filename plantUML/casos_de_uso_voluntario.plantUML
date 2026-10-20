@@ -1,0 +1,27 @@
+@startuml voluntario
+skinparam shadowing false
+skinparam monochrome false
+left to right direction
+
+title Casos de Uso - Voluntario
+
+actor "Usuario General" as UsrGen
+actor "Voluntario" as Vol
+UsrGen <|-- Vol
+
+rectangle "Sistema de Gestión Social" {
+    package "Transversales (Heredados)" {
+        usecase "Autenticación y Perfil" as UC_Base
+    }
+    package "Módulo: Voluntariado" {
+        usecase "Registrar Datos Personales y Disponibilidad" as UC_RegVol
+        usecase "Postularse / Participar en Campaña" as UC_PartCamp
+        usecase "Consultar Horas de Servicio" as UC_Horas
+    }
+}
+
+Vol --> UC_Base
+Vol --> UC_RegVol
+Vol --> UC_PartCamp
+Vol --> UC_Horas
+@enduml

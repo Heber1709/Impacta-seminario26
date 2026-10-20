@@ -1,0 +1,41 @@
+@startuml diagrama_estado
+skinparam state {
+  BackgroundColor LightYellow
+  BorderColor DarkOrange
+  ArrowColor Charcoal
+}
+
+title Diagrama de Estado del Flujo de Operaciones - db_impacta
+
+[*] --> Donacion_Registrada : Donante realiza Donación\n(donantes -> donaciones)
+
+state Donacion_Registrada {
+  [*] --> Pendiente_Clasificacion
+  Pendiente_Clasificacion --> Clasificada : Definir Tipo y Categoría\n(Monto / Producto)
+}
+
+Donacion_Registrada --> En_Inventario : Ingreso a Kardex\n(inventario_kardex)
+
+state En_Inventario {
+  [*] --> Disponible
+  Disponible --> Reservado : Asignar a Campaña Activa\n(campanas)
+  Disponible --> Vencido : Fecha Vencimiento Alcanzada
+}
+
+En_Inventario --> Proceso_Entrega : Crear Orden de Entrega\n(entregas)
+
+state Proceso_Entrega {
+  [*] --> Asignacion_Pendiente
+  Asignacion_Pendiente --> Personal_Asignado : Vincular Voluntarios\n(entrega_voluntarios)
+  Personal_Asignado --> En_Ruta : Despacho de Productos\n(Kardex: Salida)
+}
+
+Proceso_Entrega --> [*] : Entrega Completada a Beneficiario\n(firma_digital & evidencia_url)
+
+note left of En_Inventario
+  Si un producto dentro de En_Inventario
+  llega al estado Vencido, la transición
+  de salida aplica a todo el contenedor.
+end note
+
+@enduml

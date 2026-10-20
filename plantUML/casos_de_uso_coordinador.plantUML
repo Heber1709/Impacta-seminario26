@@ -1,0 +1,35 @@
+@startuml coordinador
+skinparam shadowing false
+skinparam monochrome false
+left to right direction
+
+title Casos de Uso - Coordinador
+
+actor "Usuario General" as UsrGen
+actor "Coordinador" as Coord
+UsrGen <|-- Coord
+
+rectangle "Sistema de Gestión Social" {
+    package "Transversales (Heredados)" {
+        usecase "Autenticación y Perfil" as UC_Base
+    }
+    package "Módulo: Gestión de Campo" {
+        usecase "Registrar Beneficiario y Hogar" as UC_RegBen
+        usecase "Registrar Datos de Donante" as UC_RegDon
+        usecase "Registrar Donación Física" as UC_DonFis
+        usecase "Administrar Entradas y Salidas (Kardex)" as UC_Kardex
+        usecase "Crear Campaña Social" as UC_CrearCamp
+        usecase "Controlar Horas de Servicio de Voluntarios" as UC_Horas
+        usecase "Registrar Entrega de Ayuda (Firma y Foto)" as UC_RegEntrega
+    }
+}
+
+Coord --> UC_Base
+Coord --> UC_RegBen
+Coord --> UC_RegDon
+Coord --> UC_DonFis
+Coord --> UC_Kardex
+Coord --> UC_CrearCamp
+Coord --> UC_Horas
+Coord --> UC_RegEntrega
+@enduml

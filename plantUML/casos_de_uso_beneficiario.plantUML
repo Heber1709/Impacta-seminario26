@@ -1,0 +1,23 @@
+@startuml beneficiario
+skinparam shadowing false
+skinparam monochrome false
+left to right direction
+
+title Casos de Uso - Beneficiario
+
+actor "Usuario General" as UsrGen
+actor "Beneficiario" as Ben
+UsrGen <|-- Ben
+
+rectangle "Sistema de Gestión Social" {
+    package "Transversales (Heredados)" {
+        usecase "Autenticación y Perfil" as UC_Base
+    }
+    package "Módulo: Transparencia Familiar" {
+        usecase "Consultar Historial de Ayudas Recibidas" as UC_HistAyuda
+    }
+}
+
+Ben --> UC_Base
+Ben --> UC_HistAyuda
+@enduml

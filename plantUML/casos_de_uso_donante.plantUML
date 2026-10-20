@@ -1,0 +1,29 @@
+@startuml donante
+skinparam shadowing false
+skinparam monochrome false
+left to right direction
+
+title Casos de Uso - Donante
+
+actor "Usuario General" as UsrGen
+actor "Donante" as Don
+UsrGen <|-- Don
+
+rectangle "Sistema de Gestión Social" {
+    package "Transversales (Heredados)" {
+        usecase "Autenticación y Perfil" as UC_Base
+    }
+    package "Módulo: Aportaciones" {
+        usecase "Registrar/Actualizar Datos de Donante" as UC_RegDon
+        usecase "Registrar Donación Monetaria" as UC_DonMon
+        usecase "Registrar Donación Física" as UC_DonFis
+        usecase "Descargar Certificado Emitido" as UC_Cert
+    }
+}
+
+Don --> UC_Base
+Don --> UC_RegDon
+Don --> UC_DonMon
+Don --> UC_DonFis
+Don --> UC_Cert
+@enduml

@@ -1,0 +1,86 @@
+@startuml diagrama_componentes
+
+skinparam component {
+  BackgroundColor LightCapsule
+  BorderColor DarkSlateGray
+  ArrowColor Charcoal
+}
+skinparam database {
+  BackgroundColor LightYellow
+  BorderColor DarkOrange
+}
+skinparam package {
+  BackgroundColor White
+  BorderColor Black
+}
+skinparam note {
+  BackgroundColor LightEnamel
+  BorderColor DarkOliveGreen
+}
+
+title Diagrama de Componentes (Sin Textos Flotantes) - db_impacta
+
+' =========================================================
+' CAPA 1: PRESENTACIÓN (ARRIBA)
+' =========================================================
+package "Capa de Presentación (Frontend)" {
+  [Portal Web Administrativo] as AdminUI <<Componente>>
+  [Portal de Donantes] as DonanteUI <<Componente>>
+}
+
+' Interfaz unificada de comunicación
+interface "API REST (HTTP)" as HTTPAPI
+AdminUI -down-> HTTPAPI
+DonanteUI -down-> HTTPAPI
+
+' =========================================================
+' CAPA 2: LÓGICA DE NEGOCIO (CENTRO)
+' =========================================================
+package "Capa de Negocio (API Backend)" {
+  [Módulo de Autenticación y Permisos] as AuthComp
+  [Controlador de Catálogos Geográficos] as CatalogosComp
+  [Módulo de Campañas y Entregas] as EntregasComp
+  [Módulo de Donaciones e Inventario] as InventarioComp
+  
+  ' Relaciones internas limpias
+  EntregasComp -right-> CatalogosComp
+  EntregasComp -left-> AuthComp
+  InventarioComp -left-> AuthComp
+}
+
+HTTPAPI -down-> EntregasComp
+HTTPAPI -down-> InventarioComp
+HTTPAPI -down-> AuthComp
+
+' =========================================================
+' CAPA 3: DATOS Y ALMACENAMIENTO (ABAJO)
+' =========================================================
+package "Capa de Datos y Almacenamiento" {
+  database "PostgreSQL" {
+    [Esquema: Usuarios] as DB_User
+    [Esquema: Stock / Kardex] as DB_Stock
+    [Esquema: Entregas / Campañas] as DB_Deliver
+  }
+
+  cloud "Servidores Cloud" {
+    [Storage: Fotografías] as ST_Photos
+    [Storage: Evidencias y Firmas] as ST_Signatures
+  }
+}
+
+' =========================================================
+' CONEXIONES LIMPIAS (SIN TEXTO EN FLECHAS)
+' =========================================================
+AuthComp -down-> DB_User
+InventarioComp -down-> DB_Stock
+EntregasComp -down-> DB_Deliver
+
+InventarioComp -down-> ST_Photos
+EntregasComp -down-> ST_Signatures
+
+' Notas estáticas que describen las acciones de la capa inferior de forma segura
+note bottom of AuthComp : Ejecuta persistencia SQL
+note bottom of InventarioComp : Administra stock y sube imágenes
+note bottom of EntregasComp : Registra entregas y guarda firmas
+
+@enduml
