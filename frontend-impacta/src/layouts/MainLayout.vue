@@ -55,6 +55,11 @@
           <span>▣</span>
           <span>Inventario</span>
         </RouterLink>
+
+        <RouterLink to="/reportes" class="menu-item" exact-active-class="active">
+          <span>📋</span>
+          <span>Reportes y Listados</span>
+        </RouterLink>
      
       </nav>
 
@@ -111,7 +116,6 @@
 </template>
 
 <script setup lang="ts">
-//import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { hasPermission, isAdministrator } from '../services/permissions'
 
@@ -241,7 +245,6 @@ function cerrarSesion() {
 /* RESPONSIVE */
 
 @media (max-width: 700px) {
-
   .sidebar {
     width: 80px;
     padding: 20px 10px;
@@ -267,6 +270,5 @@ function cerrarSesion() {
   .main-content {
     padding: 20px;
   }
-
 }
 </style>

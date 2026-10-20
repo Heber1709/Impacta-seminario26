@@ -1,0 +1,167 @@
+
+Requerimientos Funcionales:
+
+1. Gestión de Usuarios
+
+a. El sistema deberá permitir:
+• Registro de usuarios.
+• Inicio de sesión seguro.
+• Recuperación de contraseña.
+• Autenticación con google login.
+• Administración de perfiles.
+
+b. Tipos de usuario:
+• Administrador General
+• Coordinador
+• Voluntario
+• Donante
+• Beneficiario
+• Auditor
+
+2. Registro de Beneficiarios
+
+a. La aplicación deberá permitir almacenar información como:
+• Nombre completo
+• DPI
+• Dirección
+• Municipio
+• Departamento
+• Teléfono
+• Integrantes del hogar
+• Nivel socioeconómico
+• Fotografía
+• Historial de ayudas recibidas
+
+3. Administración de Donantes
+
+a. Registrar:
+• Personas individuales
+• Empresas
+• Fundaciones
+• Organismos internacionales
+
+b. Información:
+• Datos de contacto
+• Tipo de donación
+• Frecuencia
+• Historial
+• Monto donado
+• Certificados emitidos
+
+4. Gestión de Donaciones
+
+El sistema deberá permitir registrar:
+
+a. Donaciones monetarias
+• Transferencias
+• Tarjetas
+• Depósitos
+• Pago electrónico
+
+b. Donaciones físicas
+• Alimentos
+• Medicamentos
+• Ropa
+• Mobiliario
+• Equipo tecnológico
+• Material educativo
+
+c. Cada donación deberá tener:
+• Código único
+• Fecha
+• Estado
+• Fotografía
+• Responsable
+• Ubicación
+
+5. Inventario
+
+a. Administrar:
+• Entradas
+• Salidas
+• Existencias
+• Lotes
+• Fechas de vencimiento
+• Alertas automáticas
+• Kardex
+
+6. Campañas Sociales
+
+a. Crear campañas indicando:
+• Nombre
+• Objetivo
+• Fecha
+• Meta económica
+• Meta de productos
+• Responsable
+• Ubicación
+
+La plataforma deberá mostrar el porcentaje de avance de cada campaña.
+
+7. Gestión de Voluntarios
+
+a. Registrar:
+• Datos personales
+• Disponibilidad
+• Habilidades
+• Certificaciones
+• Horas de servicio
+• Participación en campañas
+
+8. Entrega de Ayudas
+
+b. Registrar:
+• Beneficiario
+• Responsable
+• Tipo de ayuda
+• Evidencia fotográfica
+• Firma digital
+• Fecha
+
+9. Dashboard Ejecutivo
+
+a. Mostrar indicadores como:
+• Total de beneficiarios.
+• Donaciones recibidas.
+• Donaciones entregadas.
+• Campañas activas.
+• Productos disponibles.
+• Municipios atendidos.
+• Familias beneficiadas.
+• Donantes activos.
+• Horas de voluntariado.
+
+10. Reportes
+
+a. Generar reportes en:
+• PDF
+• Excel
+• CSV
+
+b. Incluyendo filtros por:
+• Fecha
+• Departamento
+• Campaña
+• Donante
+• Beneficiario
+• Producto
+
+Entregables Esperados:
+
+El equipo de desarrollo deberá entregar:
+
+1. Documento de análisis y levantamiento de requerimientos.
+2. Especificación de requisitos funcionales y no funcionales.
+3. Diagramas UML (casos de uso, clases, secuencia, actividades y despliegue).
+4. Diseño de la arquitectura de software.
+5. Modelo entidad-relación y diccionario de datos.
+6. Prototipos de interfaz (Figma o herramienta equivalente).
+7. Aplicación web completamente funcional.
+8. Aplicación móvil para Android e iOS.
+9. API documentada con Swagger/OpenAPI.
+10. Pruebas unitarias, de integración y de aceptación.
+11. Plan de aseguramiento de la calidad del software (SQA).
+12.Manual técnico.
+13.Manual de usuario.
+14. Plan de despliegue y configuración.
+15. Informe final del proyecto con resultados, lecciones aprendidas y propuesta de mejoras.

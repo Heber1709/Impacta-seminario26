@@ -1,0 +1,279 @@
+Flujo
+-----
+usuario -> permisos
+departamentos -> municipios
+donante - > donaciones
+inventario -> donaciones -> entrega - tipos_movimiento
+entrega -> beneficiario -> campaña -> voluntarios
+
+
+Actores:
+--------
+• Administrador General
+• Coordinador
+• Voluntario
+• Donante
+• Beneficiario
+• Auditor
+
+
+Tablas db_impacta (14 rows)
+---------------------------
+ Schema |            Name             |   Type   |  Owner   
+--------+-----------------------------+----------+----------
+ public | beneficiarios               | table    | postgres
+ public | campanas                    | table    | postgres
+ public | departamentos               | table    | postgres
+ public | donaciones                  | table    | postgres
+ public | donantes                    | table    | postgres
+ public | entrega_voluntarios         | table    | postgres
+ public | entregas                    | table    | postgres
+ public | entregas_numero_entrega_seq | sequence | postgres
+ public | inventario                  | table    | postgres
+ public | inventario_kardex           | table    | postgres
+ public | municipios                  | table    | postgres
+ public | tipos_movimiento            | table    | postgres
+ public | usuarios                    | table    | postgres
+ public | voluntarios                 | table    | postgres
+
+
+beneficiarios
+-------------
+    Column     	     | Type 		      | Collation | Nullable | Default 
+----------------------------------------------------------------------------------------
+ id                  | uuid                   |           | not null | gen_random_uuid()
+ dpi                 | character varying(13)  |           | not null | 
+ nombre_completo     | character varying(200) |           | not null | 
+ direccion           | character varying(255) |           | not null | 
+ integrantes_hogar   | integer                |           | not null | 
+ estado              | boolean                |           | not null | true
+ codigo_departamento | character varying(20)  |           |          | 
+ codigo_municipio    | character varying(20)  |           |          |
+Indexes:
+    "beneficiarios_pkey" PRIMARY KEY, btree (id)
+    "beneficiarios_dpi_key" UNIQUE CONSTRAINT, btree (dpi)
+Foreign-key constraints:
+    "FK_b11fef5c6f8370cec40a3a9928a" FOREIGN KEY (codigo_municipio) REFERENCES municipios(codigo_municipio) ON DELETE RESTRICT
+    "FK_b80c09874bf6552255e73bc6d09" FOREIGN KEY (codigo_departamento) REFERENCES departamentos(codigo_departamento) ON DELETE RESTRICT
+Referenced by:
+    TABLE "entregas" CONSTRAINT "FK_3ae696d89265257736f96116fe0" FOREIGN KEY (beneficiario_id) REFERENCES beneficiarios(id)
+
+
+campanas
+--------
+    Column      | Type 			      | Collation | Nullable | Default 
+-----------------------------------------------------------------------------------------
+ id             | uuid                        |           | not null | uuid_generate_v4()
+ nombre         | character varying(200)      |           | not null | 
+ objetivo       | text                        |           | not null | 
+ fecha_inicio   | date                        |           | not null | 
+ fecha_fin      | date                        |           |          | 
+ meta_economica | numeric(10,2)               |           | not null | '0'::numeric
+ meta_productos | integer                     |           | not null | 0
+ fecha_creacion | timestamp without time zone |           | not null | now()
+ estado         | boolean                     |           | not null | true
+Indexes:
+    "PK_3ea606bfebfb23646dbc654c57d" PRIMARY KEY, btree (id)
+Referenced by:
+    TABLE "entregas" CONSTRAINT "FK_cb71a9e2f6371e093ed09a4ef6a" FOREIGN KEY (campana_id) REFERENCES campanas(id)
+
+
+departamentos
+-------------
+    Column           | Type 		      | Collation | Nullable | Default 
+-------------------------------------------------------------------------------------
+ codigo_departamento | character varying(20)  |           | not null | 
+ descripcion         | character varying(100) |           | not null |
+Indexes:
+    "PK_32eb4bbe481e049c93ca0ebe39e" PRIMARY KEY, btree (codigo_departamento)
+Referenced by:
+    TABLE "voluntarios" CONSTRAINT "FK_12bde0b5351349deaab0e3cfcb3" FOREIGN KEY (codigo_departamento) REFERENCES departamentos(codigo_departamento) ON DELETE RESTRICT
+    TABLE "municipios" CONSTRAINT "FK_229f5b4f2e32e34c8c9a5a8b29e" FOREIGN KEY (codigo_departamento) REFERENCES departamentos(codigo_departamento) ON DELETE RESTRICT
+    TABLE "beneficiarios" CONSTRAINT "FK_b80c09874bf6552255e73bc6d09" FOREIGN KEY (codigo_departamento) REFERENCES departamentos(codigo_departamento) ON DELETE RESTRICT
+
+
+donantes
+--------
+    Column     | Type			| Collation | Nullable | Default 
+-------------------------------------------------------------------------------------
+ id            | uuid                   |           | not null | uuid_generate_v4()
+ nombre        | character varying(200) |           | not null | 
+ tipo          | donantes_tipo_enum     |           | not null | 
+ email         | character varying(150) |           |          | 
+ telefono      | character varying(20)  |           |          | 
+ estado        | boolean                |           | not null | true
+Indexes:
+    "PK_d94a9cba58603c226b8323039e7" PRIMARY KEY, btree (id)
+Referenced by:
+    TABLE "donaciones" CONSTRAINT "FK_3ebfba4f20fa502df814fb3ec0b" FOREIGN KEY (donante_id) REFERENCES donantes(id)
+
+
+donaciones
+----------
+    Column      | Type 			      | Collation | Nullable | Default 
+-----------------------------------------------------------------------------------------
+ id             | uuid                        |           | not null | gen_random_uuid()
+ codigo_unico   | character varying(50)       |           | not null | 
+ tipo           | donaciones_tipo_enum        |           | not null | 
+ categoria      | donaciones_categoria_enum   |           | not null | 
+ monto          | numeric(10,2)               |           |          | 
+ donante_id     | uuid                        |           |          | 
+ fotografia_url | character varying(255)      |           |          | 
+ fecha_ingreso  | timestamp without time zone |           | not null | now()
+ estado         | boolean                     |           | not null | true
+Indexes:
+    "donaciones_pkey" PRIMARY KEY, btree (id)
+    "donaciones_codigo_unico_key" UNIQUE CONSTRAINT, btree (codigo_unico)
+Foreign-key constraints:
+    "FK_3ebfba4f20fa502df814fb3ec0b" FOREIGN KEY (donante_id) REFERENCES donantes(id)
+Referenced by:
+    TABLE "inventario_kardex" CONSTRAINT "FK_2b156d83e5ad1c5663c8e15beba" FOREIGN KEY (donacion_id) REFERENCES donaciones(id)
+    TABLE "inventario" CONSTRAINT "fk_donacion" FOREIGN KEY (donacion_id) REFERENCES donaciones(id) ON DELETE CASCADE
+
+
+entregas
+--------
+    Column       | Type 		       | Collation | Nullable | Default 
+------------------------------------------------------------------------------------------
+ id              | uuid                        |           | not null | gen_random_uuid()
+ beneficiario_id | uuid                        |           |          | 
+ usuario_id      | uuid                        |           |          | 
+ fecha           | timestamp without time zone |           | not null | now()
+ evidencia_url   | character varying(255)      |           |          | 
+ estado          | boolean                     |           | not null | true
+ campana_id      | uuid                        |           |          | 
+ firma_digital   | text                        |           |          | 
+ numero_entrega  | integer                     |           | not null | nextval('entregas_numero_entrega_seq'::regclass)
+Indexes:
+    "entregas_pkey" PRIMARY KEY, btree (id)
+    "UQ_ea794c534b8bd5b0e8f9d570fcf" UNIQUE CONSTRAINT, btree (numero_entrega)
+Foreign-key constraints:
+    "FK_3ae696d89265257736f96116fe0" FOREIGN KEY (beneficiario_id) REFERENCES beneficiarios(id)
+    "FK_cb71a9e2f6371e093ed09a4ef6a" FOREIGN KEY (campana_id) REFERENCES campanas(id)
+    "FK_ea859008ea306e023579affb7a9" FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+Referenced by:
+    TABLE "entrega_voluntarios" CONSTRAINT "FK_23827347f0d5afe72a0583c8543" FOREIGN KEY (entrega_id) REFERENCES entregas(id) ON UPDATE CASCADE ON DELETE CASCADE
+    TABLE "inventario_kardex" CONSTRAINT "FK_2dc3669ed6e71157871a231bdc7" FOREIGN KEY (entrega_id) REFERENCES entregas(id)
+
+
+entregas_numero_entrega_seq
+---------------------------
+Type    | Start | Minimum |  Maximum   | Increment | Cycles? | Cache 
+---------+-------+---------+------------+-----------+---------+-------
+integer |     1 |       1 | 2147483647 |         1 | no      |     1
+
+
+entrega_voluntarios
+-------------------
+    Column     | Type | Collation | Nullable | Default 
+-----------------------------------------------------------------
+ entrega_id    | uuid |           | not null | 
+ voluntario_id | uuid |           | not null |
+Indexes:
+    "PK_f0ea51a8f0f238937e32154a04e" PRIMARY KEY, btree (entrega_id, voluntario_id)
+    "IDX_23827347f0d5afe72a0583c854" btree (entrega_id)
+    "IDX_334cab9d3c34f4a879c7029ae7" btree (voluntario_id)
+Foreign-key constraints:
+    "FK_23827347f0d5afe72a0583c8543" FOREIGN KEY (entrega_id) REFERENCES entregas(id) ON UPDATE CASCADE ON DELETE CASCADE
+    "FK_334cab9d3c34f4a879c7029ae7e" FOREIGN KEY (voluntario_id) REFERENCES voluntarios(id) ON UPDATE CASCADE ON DELETE CASCADE
+
+
+inventario
+----------
+Column             |     Type      | Collation | Nullable |      Default      
+-------------------+---------------+-----------+----------+-------------------
+ id                | uuid          |           | not null | gen_random_uuid()
+ tipo_movimiento   | movement_type |           | not null | 
+ cantidad          | integer       |           | not null | 
+ fecha_vencimiento | date          |           |          | 
+ donacion_id       | uuid          |           | not null |
+Indexes:
+    "inventario_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "fk_donacion" FOREIGN KEY (donacion_id) REFERENCES donaciones(id) ON DELETE CASCADE
+
+
+inventario_kardex
+--------------------
+Column         		|                  Type                  | Collation | Nullable |      Default       
+------------------------+----------------------------------------+-----------+----------+--------------------
+ id                     | uuid                                   |           | not null | uuid_generate_v4()
+ tipo_movimiento        | inventario_kardex_tipo_movimiento_enum |           | not null | 
+ cantidad               | integer                                |           | not null | 
+ fecha_vencimiento      | date                                   |           |          | 
+ fecha_movimiento       | timestamp without time zone            |           | not null | now()
+ observaciones          | character varying(255)                 |           |          | 
+ estado                 | boolean                                |           | not null | true
+ donacion_id            | uuid                                   |           |          | 
+ entrega_id             | uuid                                   |           |          | 
+ tipo_movimiento_codigo | character varying(30)                  |           |          |
+Indexes:
+    "PK_0aa49c923f7ce0f9e35e844980a" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "FK_2b156d83e5ad1c5663c8e15beba" FOREIGN KEY (donacion_id) REFERENCES donaciones(id)
+    "FK_2dc3669ed6e71157871a231bdc7" FOREIGN KEY (entrega_id) REFERENCES entregas(id)
+
+
+municipios
+----------
+Column        	     |          Type          | Collation | Nullable | Default 
+---------------------+------------------------+-----------+----------+---------
+ codigo_municipio    | character varying(20)  |           | not null | 
+ codigo_departamento | character varying(20)  |           | not null | 
+ descripcion         | character varying(100) |           | not null |
+Indexes:
+    "PK_87764b3c1078f5514fb1fb2db20" PRIMARY KEY, btree (codigo_municipio)
+Foreign-key constraints:
+    "FK_229f5b4f2e32e34c8c9a5a8b29e" FOREIGN KEY (codigo_departamento) REFERENCES departamentos(codigo_departamento) ON DELETE RESTRICT
+Referenced by:
+    TABLE "voluntarios" CONSTRAINT "FK_58155da31b207b850364988de26" FOREIGN KEY (codigo_municipio) REFERENCES municipios(codigo_municipio) ON DELETE RESTRICT
+    TABLE "beneficiarios" CONSTRAINT "FK_b11fef5c6f8370cec40a3a9928a" FOREIGN KEY (codigo_municipio) REFERENCES municipios(codigo_municipio) ON DELETE RESTRICT
+
+
+tipos_movimiento
+----------------
+Column       |          Type          | Collation | Nullable | Default 
+-------------+------------------------+-----------+----------+---------
+ codigo      | character varying(30)  |           | not null | 
+ descripcion | character varying(100) |           | not null | 
+ signo       | character(1)           |           | not null | 
+ estado      | boolean                |           | not null | true
+Indexes:
+    "PK_c8a688fe43fccb3c1c65909cd46" PRIMARY KEY, btree (codigo)
+
+
+Usuarios
+--------
+Column    |          Type          | Collation | Nullable |             Default             
+----------+------------------------+-----------+----------+---------------------------------
+ id       | uuid                   |           | not null | gen_random_uuid()
+ email    | character varying(255) |           | not null | 
+ nombre   | character varying(150) |           | not null | 
+ rol      | usuarios_rol_enum      |           | not null | 'VOLUNTARIO'::usuarios_rol_enum
+ estado   | boolean                |           | not null | true
+ permisos | jsonb                  |           | not null | '{}'::jsonb
+Indexes:
+    "usuarios_pkey" PRIMARY KEY, btree (id)
+    "usuarios_email_key" UNIQUE CONSTRAINT, btree (email)
+Referenced by:
+    TABLE "entregas" CONSTRAINT "FK_ea859008ea306e023579affb7a9" FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+
+
+voluntarios
+-----------
+Column        	     |          Type          | Collation | Nullable |      Default      
+---------------------+------------------------+-----------+----------+-------------------
+ id                  | uuid                   |           | not null | gen_random_uuid()
+ dpi                 | character varying(13)  |           | not null | 
+ nombre_completo     | character varying(200) |           | not null | 
+ direccion           | character varying(255) |           | not null | 
+ estado              | boolean                |           | not null | true
+ codigo_departamento | character varying(20)  |           |          | 
+ codigo_municipio    | character varying(20)  |           |          |
+Indexes:
+    "voluntarios_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "FK_12bde0b5351349deaab0e3cfcb3" FOREIGN KEY (codigo_departamento) REFERENCES departamentos(codigo_departamento) ON DELETE RESTRICT
+    "FK_58155da31b207b850364988de26" FOREIGN KEY (codigo_municipio) REFERENCES municipios(codigo_municipio) ON DELETE RESTRICT
+Referenced by:
+    TABLE "entrega_voluntarios" CONSTRAINT "FK_334cab9d3c34f4a879c7029ae7e" FOREIGN KEY (voluntario_id) REFERENCES voluntarios(id) ON UPDATE CASCADE ON DELETE CASCADE

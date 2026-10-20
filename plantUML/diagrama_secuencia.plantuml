@@ -1,0 +1,72 @@
+@startuml secuencia_donacion_entrega
+
+' Configuración visual
+skinparam boxPadding 10
+skinparam participantPadding 10
+skinparam shadowing false
+autoactivate on
+
+actor "Donante" as actor_don
+actor "Coordinador" as actor_coor
+actor "Voluntario" as actor_vol
+box "Sistema (Backend/Frontend)" #LightBlue
+    participant "Módulo Web" as app
+end box
+box "Base de Datos (db_impacta)" #LightYellow
+    participant "donantes / donaciones" as db_don
+    participant "inventario / kardex" as db_inv
+    participant "campanas / beneficiarios" as db_camp
+    participant "entregas" as db_ent
+end box
+actor "Auditor" as actor_aud
+
+== Fase 1: Ingreso de Donación e Inventario ==
+
+actor_don -> app : Registrar Perfil y Donación (monto/foto)
+    app -> db_don : INSERT INTO donantes / donaciones
+    return Confirmación (donacion_id, codigo_unico)
+return Donación registrada exitosamente
+
+...
+
+actor_coor -> app : Validar Donación y dar Entrada
+    app -> db_inv : INSERT INTO inventario (cantidad, donacion_id)
+    app -> db_inv : INSERT INTO inventario_kardex (tipo_movimiento 'ENTRADA')
+    return Confirmación de Stock y Kardex actualizado
+return Inventario actualizado en el sistema
+
+== Fase 2: Planificación de la Campaña ==
+
+actor_coor -> app : Crear Campaña y Seleccionar Beneficiarios
+    app -> db_camp : INSERT INTO campanas \n& Vincular beneficiarios(codigo_municipio)
+    return Campaña y Beneficiarios vinculados
+return Campaña lista para distribución
+
+== Fase 3: Ejecución de Entrega en Campo ==
+
+actor_coor -> app : Asignar Voluntario a la Entrega
+    app -> db_ent : INSERT INTO entrega_voluntarios(voluntario_id)
+    return Voluntario asignado
+return Planificación completada
+
+... Día de la Jornada de Entrega ...
+
+actor_vol -> app : Registrar Entrega (Firma Digital, Evidencia URL, Beneficiario)
+    app -> db_ent : INSERT INTO entregas (numero_entrega, firma_digital, evidencia_url)
+    return entrega_id generado
+    
+    app -> db_inv : UPDATE inventario (Restar cantidad)
+    app -> db_inv : INSERT INTO inventario_kardex (tipo_movimiento 'SALIDA', entrega_id)
+    return Stock descontado e Historial Kardex grabado
+return Entrega guardada y cerrada con éxito
+
+== Fase 4: Auditoría y Transparencia ==
+
+actor_aud -> app : Solicitar Historial de Movimientos y Evidencias
+    app -> db_inv : SELECT * FROM inventario_kardex \nJOIN tipos_movimiento
+    return Datos de movimientos (+ / -)
+    app -> db_ent : SELECT firma_digital, evidencia_url FROM entregas
+    return Evidencias físicas y digitales
+return Reporte de Transparencia generado en pantalla
+
+@enduml

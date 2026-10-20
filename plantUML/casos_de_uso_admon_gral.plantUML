@@ -1,0 +1,35 @@
+@startuml admon
+skinparam shadowing false
+skinparam monochrome false
+left to right direction
+
+title Casos de Uso - Administrador General
+
+actor "Usuario General" as UsrGen
+actor "Administrador General" as Admin
+UsrGen <|-- Admin
+
+rectangle "Sistema de Gestión Social" {
+    package "Transversales (Heredados)" {
+        usecase "Autenticación y Perfil" as UC_Base
+    }
+    package "Módulo: Operaciones y Control" {
+        usecase "Registrar Beneficiario y Hogar" as UC_RegBen
+        usecase "Registrar Datos de Donante" as UC_RegDon
+        usecase "Administrar Entradas y Salidas (Kardex)" as UC_Kardex
+        usecase "Gestionar Lotes y Vencimientos" as UC_Lotes
+        usecase "Crear Campaña Social" as UC_CrearCamp
+        usecase "Registrar Entrega de Ayuda" as UC_RegEntrega
+        usecase "Visualizar Dashboard Ejecutivo" as UC_Dash
+    }
+}
+
+Admin --> UC_Base
+Admin --> UC_RegBen
+Admin --> UC_RegDon
+Admin --> UC_Kardex
+Admin --> UC_Lotes
+Admin --> UC_CrearCamp
+Admin --> UC_RegEntrega
+Admin --> UC_Dash
+@enduml

@@ -1,0 +1,66 @@
+@startuml
+skinparam shadowing false
+skinparam roundCorner 10
+skinparam DefaultFontName Arial
+skinparam BackgroundColor #FFFFFF
+
+' Estilos de componentes
+skinparam rectangle {
+    BorderThickness 1
+}
+
+' 1. Capa de Clientes / Dispositivos
+node "Capa de Presentación" as capa_clientes {
+    rectangle "<&person> Administradores / Auditores\n(Navegador Web)" as web_app #E8F0FE
+    rectangle "<&phone> Coordinadores / Voluntarios\n(App Móvil Android/iOS)" as mobile_app #E8F0FE
+}
+' 2. Capa de Red y Seguridad
+rectangle "Gateway & Seguridad" as gateway #F5F5F5 {
+    rectangle "Reverse Proxy & HTTPS\n(Nginx / Cloudflare)" as proxy #EAEAEA
+}
+
+' 3. Capa de Lógica de Negocio (Componentes Propios internos)
+rectangle "Lógica de Negocio (Backend Modular)" as backend #F2F5F9 {
+    rectangle "Módulo de Usuarios\ny Roles" as mod_auth #FADBD8
+    rectangle "Módulo de Beneficiarios\ny Ayudas (Firma/Foto)" as mod_beneficiarios #D4E6F1
+    rectangle "Módulo de Inventario\ny Donaciones (Kardex)" as mod_inventario #D5F5E3
+    rectangle "Módulo de Campañas\ny Dashboard (Métricas)" as mod_campanas #FCF3CF
+    rectangle "Motor de Reportes\n(Colas Asíncronas)" as mod_reportes #E8DAEF
+}
+' 4. Capa de Almacenamiento y Datos
+queue "Cola de Tareas\n(Redis)" as cola_tareas #FDEDEC
+database "Base de Datos Relacional\n(PostgreSQL)" as db_principal #EAFAF1
+
+' 5. Servicios e Integraciones Externas
+cloud "Servicios Externos (Dependencias)" as servicios_externos {
+    rectangle "Google Login\n(OAuth 2.0)" as ext_google #FEF9E7
+    rectangle "Almacenamiento de Fotos\n(AWS S3 / Cloud Storage)" as ext_storage #F4ECF7
+    rectangle "Notificaciones / Alertas\n(SendGrid API)" as ext_email #EAF2F8
+}
+
+' ---- INTERCAMBIOS Y FLUJOS ROTULADOS ----
+
+' Conexiones de clientes al proxy
+web_app --> proxy : "1. Peticiones HTTPS (REST/JSON)"
+mobile_app --> proxy : "1. Peticiones HTTPS (REST/JSON)"
+' Del proxy a los módulos internos
+proxy --> mod_auth : "2. Enruta /auth"
+proxy --> mod_beneficiarios : "2. Enruta /beneficiarios"
+proxy --> mod_inventario : "2. Enruta /inventario"
+proxy --> mod_campanas : "2. Enruta /dashboard"
+proxy --> mod_reportes : "2. Enruta /reportes"
+
+' Interacciones con Datos e Infraestructura interna
+mod_auth --> db_principal : "Consulta roles"
+mod_beneficiarios --> db_principal : "Registra transacciones de ayuda"
+mod_inventario --> db_principal : "Actualiza Kardex y existencias"
+mod_campanas --> db_principal : "Agrega métricas"
+mod_reportes --> cola_tareas : "Encola reportes pesados PDF/Excel"
+cola_tareas --> db_principal : "Procesa en lote"
+
+' Conexiones a servicios externos
+mod_auth .right.> ext_google : "Valida Token JWT"
+mod_beneficiarios .right.> ext_storage : "Sube fotos de evidencia y firmas"
+mod_inventario .right.> ext_email : "Envía alertas de stock/vencimiento"
+
+@endum

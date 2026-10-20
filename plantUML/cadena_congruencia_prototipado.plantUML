@@ -1,0 +1,39 @@
+@startuml
+skinparam shadowing false
+skinparam roundCorner 10
+skinparam DefaultFontName Arial
+
+' Removes default borders for a cleaner look
+skinparam rectangle {
+    BorderColor transparent
+}
+
+' 1. Top Banner (Title)
+rectangle "<color:white><size:16>**2.5 Cadena de congruencia para la Entrega 5**\nDe la necesidad a la validación de la solución</color>" as titulo #104E8B
+
+' 2. Middle Row Squares (Horizontal Chain)
+rectangle "<color:white>**PROBLEMA\nIDENTIFICADO**</color>" as c1 #1E6BB8
+rectangle "<color:white>**REQUERIMIENTOS**</color>" as c2 #458B00
+rectangle "<color:white>**FUNCIONALES**</color>" as c3 #E67E22
+rectangle "<color:white>**NO\nFUNCIONALES**</color>" as c4 #7D3C98
+rectangle "<color:white>**PROTOTIPO**</color>" as c5 #D4AC0D
+rectangle "<color:white>**EVIDENCIA DE\nFUNCIONALIDAD**</color>" as c6 #0E6251
+
+' 3. Bottom Banner (Footer)
+rectangle "<color:#104E8B>**Esta cadena asegura la trazabilidad entre el problema, los objetivos y la solución propuesta.**</color>" as pie #E6F2FF
+
+' --- LAYOUT CONNECTIONS ---
+
+' Aligns the Title centered above the middle row
+titulo -down[hidden]-> c3
+
+' Forces the middle squares to sit side-by-side horizontally
+c1 -right-> c2
+c2 -right-> c3
+c3 -right-> c4
+c4 -right-> c5
+c5 -right-> c6
+
+' Aligns the Footer centered below the middle row
+c4 -down[hidden]-> pie
+@endum

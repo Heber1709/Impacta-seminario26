@@ -1,0 +1,29 @@
+@startuml auditor
+skinparam shadowing false
+skinparam monochrome false
+left to right direction
+
+title Casos de Uso - Auditor
+
+actor "Usuario General" as UsrGen
+actor "Auditor" as Aud
+UsrGen <|-- Aud
+
+rectangle "Sistema de Gestión Social" {
+    package "Transversales (Heredados)" {
+        usecase "Autenticación y Perfil" as UC_Base
+    }
+    package "Módulo: Auditoría y Monitoreo" {
+        usecase "Visualizar Dashboard Ejecutivo (Métricas)" as UC_Dash
+        usecase "Auditar Entradas y Salidas de Inventario (Kardex)" as UC_Kardex
+        usecase "Monitorear Porcentaje de Avance de Campañas" as UC_AvanceCamp
+        usecase "Consultar Historial de Ayudas por Beneficiario" as UC_HistAyuda
+    }
+}
+
+Aud --> UC_Base
+Aud --> UC_Dash
+Aud --> UC_Kardex
+Aud --> UC_AvanceCamp
+Aud --> UC_HistAyuda
+@enduml
