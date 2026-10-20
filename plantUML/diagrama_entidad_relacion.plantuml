@@ -1,0 +1,164 @@
+@startuml db_impacta_er
+
+' Configuración visual básica
+skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+package "db_impacta" {
+
+    entity "departamentos" as depto {
+        * codigo_departamento : character varying(20) <<PK>>
+        --
+        * descripcion : character varying(100)
+    }
+
+    entity "municipios" as muni {
+        * codigo_municipio : character varying(20) <<PK>>
+        --
+        * codigo_departamento : character varying(20) <<FK>>
+        * descripcion : character varying(100)
+    }
+
+    entity "usuarios" as usr {
+        * id : uuid <<PK>> [gen_random_uuid()]
+        --
+        * email : character varying(255) <<UNIQUE>>
+        * nombre : character varying(150)
+        * rol : usuarios_rol_enum
+        * estado : boolean [true]
+        * permisos : jsonb ['{}']
+    }
+
+    entity "voluntarios" as vol {
+        * id : uuid <<PK>> [gen_random_uuid()]
+        --
+        * dpi : character varying(13)
+        * nombre_completo : character varying(200)
+        * direccion : character varying(255)
+        * estado : boolean [true]
+        codigo_departamento : character varying(20) <<FK>>
+        codigo_municipio : character varying(20) <<FK>>
+    }
+
+    entity "beneficiarios" as ben {
+        * id : uuid <<PK>> [gen_random_uuid()]
+        --
+        * dpi : character varying(13) <<UNIQUE>>
+        * nombre_completo : character varying(200)
+        * direccion : character varying(255)
+        * integrantes_hogar : integer
+        * estado : boolean [true]
+        codigo_departamento : character varying(20) <<FK>>
+        codigo_municipio : character varying(20) <<FK>>
+    }
+
+    entity "campanas" as camp {
+        * id : uuid <<PK>> [uuid_generate_v4()]
+        --
+        * nombre : character varying(200)
+        * objetivo : text
+        * fecha_inicio : date
+        fecha_fin : date
+        * meta_economica : numeric(10,2)
+        * meta_productos : integer
+        * fecha_creacion : timestamp without time zone [now()]
+        * estado : boolean [true]
+    }
+
+    entity "donantes" as dont {
+        * id : uuid <<PK>> [uuid_generate_v4()]
+        --
+        * nombre : character varying(200)
+        * tipo : donantes_tipo_enum
+        email : character varying(150)
+        telefono : character varying(20)
+        * estado : boolean [true]
+    }
+
+    entity "donaciones" as don {
+        * id : uuid <<PK>> [gen_random_uuid()]
+        --
+        * codigo_unico : character varying(50) <<UNIQUE>>
+        * tipo : donaciones_tipo_enum
+        * categoria : donaciones_categoria_enum
+        monto : numeric(10,2)
+        donante_id : uuid <<FK>>
+        fotografia_url : character varying(255)
+        * fecha_ingreso : timestamp without time zone [now()]
+        * estado : boolean [true]
+    }
+
+    entity "inventario" as inv {
+        * id : uuid <<PK>> [gen_random_uuid()]
+        --
+        * tipo_movimiento : movement_type
+        * cantidad : integer
+        fecha_vencimiento : date
+        * donacion_id : uuid <<FK>>
+    }
+
+    entity "tipos_movimiento" as t_mov {
+        * codigo : character varying(30) <<PK>>
+        --
+        * descripcion : character varying(100)
+        * signo : character(1)
+        * estado : boolean [true]
+    }
+
+    entity "entregas" as ent {
+        * id : uuid <<PK>> [gen_random_uuid()]
+        --
+        * numero_entrega : integer <<UNIQUE>> [sequence]
+        beneficiario_id : uuid <<FK>>
+        usuario_id : uuid <<FK>>
+        * fecha : timestamp without time zone [now()]
+        evidencia_url : character varying(255)
+        * estado : boolean [true]
+        campana_id : uuid <<FK>>
+        firma_digital : text
+    }
+
+    entity "entrega_voluntarios" as ent_vol {
+        * entrega_id : uuid <<PK, FK>>
+        * voluntario_id : uuid <<PK, FK>>
+    }
+
+    entity "inventario_kardex" as kardex {
+        * id : uuid <<PK>> [uuid_generate_v4()]
+        --
+        * tipo_movimiento : inventario_kardex_tipo_movimiento_enum
+        * cantidad : integer
+        fecha_vencimiento : date
+        * fecha_movimiento : timestamp without time zone [now()]
+        observaciones : character varying(255)
+        * estado : boolean [true]
+        donacion_id : uuid <<FK>>
+        entrega_id : uuid <<FK>>
+        tipo_movimiento_codigo : character varying(30) <<FK>>
+    }
+
+}
+
+' Relaciones (Líneas de conexión)
+depto ||--|{ muni : "tiene"
+depto ||--|{ vol : "ubica"
+depto ||--|{ ben : "ubica"
+muni  ||--|{ vol : "ubica"
+muni  ||--|{ ben : "ubica"
+
+dont  ||--|{ don : "realiza"
+don   ||--|{ inv : "abastece"
+don   ||--|{ kardex : "registra"
+
+camp  ||--|{ ent : "asocia"
+usr   ||--|{ ent : "procesa"
+ben   ||--|{ ent : "recibe"
+
+ent   ||--|{ ent_vol : "incluye"
+vol   ||--|{ ent_vol : "asiste"
+
+ent   ||--|{ kardex : "descarga"
+t_mov ||--|{ kardex : "clasifica"
+
+@enduml

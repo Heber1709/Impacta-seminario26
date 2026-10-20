@@ -1,0 +1,61 @@
+@startuml flujo_sistema_impacta_actores
+
+skinparam linetype ortho
+skinparam shadowing false
+skinparam Archimate {
+    BackgroundColor white
+    RoundCorner 8
+}
+
+|Administrador General|
+start
+:Definir Departamentos y Municipios;
+:Configurar Mantenimiento de Tipos de Movimiento\n(Definir signos + y -);
+:Registrar Usuarios en el sistema;
+:Asignar Rol y Permisos (JSON);
+
+|Donante|
+:Registrar Perfil de Donante\n(Individual o Institucional);
+:Registrar Donación;
+note right
+  Genera código_unico, monto
+  o URL de fotografía.
+end note
+
+|Coordinador|
+:Aprobar e Ingresar Donación a Inventario General;
+:Registrar movimiento de ENTRADA en Kardex;
+:Crear Campaña Benéfica\n(Metas económicas y de productos);
+
+|Beneficiario|
+:Solicitar Apoyo / Registrar Datos del Hogar;
+note right
+  Se valida ubicación (muni/depto)
+  e integrantes del hogar.
+end note
+
+|Coordinador|
+:Focalizar y Seleccionar Beneficiarios para la Campaña;
+:Asignar Voluntarios a la Entrega;
+
+|Voluntario|
+:Aceptar Asignación a la Jornada;
+:Ejecutar Entrega de Ayuda en Campo;
+:Registrar número_entrega, firma_digital\ny evidencia_url en el sistema;
+
+|Coordinador|
+:Descargar productos del Inventario General;
+:Registrar movimiento de SALIDA en Kardex;
+note right
+  Registra tipo de movimiento
+  y No. de entrega.
+end note
+:Cierre de Entrega de la Campaña;
+
+|Auditor|
+:Consultar Historial de Inventario Kardex;
+:Verificar firmas digitales y evidencias de entrega;
+:Generar Reporte de Impacto y Transparencia;
+stop
+
+@enduml
