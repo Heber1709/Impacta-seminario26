@@ -10,6 +10,13 @@
             Genera, consulta e imprime reportes consolidados y constancias oficiales en formato PDF.
           </p>
         </div>
+        <a
+          href="/MANUAL_DEL_SISTEMA.docx"
+          download="MANUAL_DEL_SISTEMA_IMPACTA.docx"
+          class="btn-manual-download"
+        >
+          <span>📘</span> Descargar Manual (.docx)
+        </a>
       </header>
 
       <!-- Selector de Reportes (Tabs) -->
@@ -914,7 +921,32 @@ onMounted(() => {
 }
 
 .page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.btn-manual-download {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #123f36;
+  color: white;
+  text-decoration: none;
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(18, 63, 54, 0.2);
+  transition: all 0.2s ease;
+}
+
+.btn-manual-download:hover {
+  background: #2d6a4f;
+  transform: translateY(-1px);
 }
 
 .eyebrow {
